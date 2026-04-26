@@ -22,12 +22,12 @@ async function seed() {
 
   // Users
   const users = await db.collection("users").insertMany([
-    { name: "Admin User", email: "admin@civic.com", password: hash, role: "admin", createdAt: now, updatedAt: now },
-    { name: "John Citizen", email: "john@civic.com", password: hash, role: "user", createdAt: now, updatedAt: now },
-    { name: "Jane Doe", email: "jane@civic.com", password: hash, role: "user", createdAt: now, updatedAt: now },
-    { name: "Road Authority", email: "road@authority.com", password: hash, role: "authority", organization: "Public Works Dept", createdAt: now, updatedAt: now },
-    { name: "Water NGO", email: "water@ngo.com", password: hash, role: "ngo", organization: "Clean Water Foundation", createdAt: now, updatedAt: now },
-    { name: "Safety Corps", email: "safety@authority.com", password: hash, role: "authority", organization: "Community Safety", createdAt: now, updatedAt: now },
+    { name: "Admin User", email: "admin@civic.com", password: hash, role: "admin", isVerified: true, createdAt: now, updatedAt: now },
+    { name: "John Citizen", email: "john@civic.com", password: hash, role: "user", isVerified: true, createdAt: now, updatedAt: now },
+    { name: "Jane Doe", email: "jane@civic.com", password: hash, role: "user", isVerified: true, createdAt: now, updatedAt: now },
+    { name: "Road Authority", email: "road@authority.com", password: hash, role: "authority", organization: "Public Works Dept", isVerified: true, createdAt: now, updatedAt: now },
+    { name: "Water NGO", email: "water@ngo.com", password: hash, role: "ngo", organization: "Clean Water Foundation", isVerified: true, createdAt: now, updatedAt: now },
+    { name: "Safety Corps", email: "safety@authority.com", password: hash, role: "authority", organization: "Community Safety", isVerified: true, createdAt: now, updatedAt: now },
   ]);
   const uid = Object.values(users.insertedIds);
 

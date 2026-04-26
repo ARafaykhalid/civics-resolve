@@ -21,7 +21,9 @@ export default function RegisterPage() {
 
     try {
       const result = await registerUser({ name, email, password });
-      if (result.success) {
+      if (result.success && result.isVerificationRequired) {
+        router.push(`/verify?email=${encodeURIComponent(email)}`);
+      } else if (result.success) {
         router.push("/login?registered=true");
       } else {
         setError(result.error || "Registration failed");

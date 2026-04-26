@@ -102,6 +102,12 @@ export const volunteerSchema = z.object({
   contactEmail: z.string().email(),
   contactPhone: z.string().optional().or(z.literal("")),
   images: z.array(z.string()).max(3).default([]),
+  customFields: z.array(z.object({
+    id: z.string(),
+    label: z.string().min(1),
+    type: z.enum(["text", "number", "email", "textarea", "checkbox"]),
+    required: z.boolean().default(false)
+  })).optional().default([]),
 });
 
 export type VolunteerInput = z.infer<typeof volunteerSchema>;

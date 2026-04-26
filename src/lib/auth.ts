@@ -20,16 +20,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         await connectDB();
 
         const user = await User.findOne({ email: credentials.email });
-        if (!user) {
-          throw new Error("Invalid email or password");
-        }
+        if (!user) throw new Error("Invalid credentials");
 
         const isValid = await bcrypt.compare(
           credentials.password as string,
           user.password
         );
-        if (!isValid) {
-          throw new Error("Invalid email or password");
+        if (!isValid) throw new Error("Invalid credentials");
+
+        if (!user.isVerified) {
+          throw new Error("Please verify your email before logging in.");
         }
 
         return {

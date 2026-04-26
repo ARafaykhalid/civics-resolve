@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { createAnnouncement, deleteAnnouncement } from "@/actions/community";
+import ConfirmModal from "@/components/ConfirmModal";
+import Dropdown from "@/components/Dropdown";
 import { formatDate, cn } from "@/lib/utils";
 import { Plus, Trash2, Loader2, AlertTriangle, Bell, Info, Megaphone, Pin } from "lucide-react";
 
@@ -10,20 +12,32 @@ export default function AnnouncementsManagement({ announcements }: { announcemen
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [form, setForm] = useState({ title: "", content: "", type: "info", isPinned: false });
 
+  const [error, setError] = useState("");
+
   const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault(); setLoading(true);
-    await createAnnouncement(form);
-    setLoading(false); setShowForm(false);
-    window.location.reload();
+    e.preventDefault(); 
+    setError("");
+    setLoading(true);
+    const result = await createAnnouncement(form);
+    if (result.success) {
+      setLoading(false); 
+      setShowForm(false);
+      window.location.reload();
+    } else {
+      setError(result.error || "Failed to create announcement");
+      setLoading(false);
+    }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete?")) return;
-    setDeleting(id);
-    await deleteAnnouncement(id);
+  const executeDelete = async () => {
+    if (!confirmDelete) return;
+    setDeleting(confirmDelete);
+    await deleteAnnouncement(confirmDelete);
     setDeleting(null);
+    setConfirmDelete(null);
     window.location.reload();
   };
 
@@ -45,10 +59,23 @@ export default function AnnouncementsManagement({ announcements }: { announcemen
       {showForm && (
         <div className="glass-card p-6 mb-6">
           <form onSubmit={handleCreate} className="space-y-4">
+            {error && <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">{error}</div>}
             <div><label className="label-text">Title *</label><input value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} className="input-field" required /></div>
             <div><label className="label-text">Content *</label><textarea value={form.content} onChange={(e) => setForm((p) => ({ ...p, content: e.target.value }))} className="input-field min-h-[80px]" required /></div>
             <div className="flex gap-4">
-              <div className="flex-1"><label className="label-text">Type</label><select value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))} className="select-field"><option value="info">Info</option><option value="warning">Warning</option><option value="emergency">Emergency</option><option value="update">Update</option></select></div>
+              <div className="flex-1 z-20 relative">
+                <label className="label-text">Type</label>
+                <Dropdown
+                  value={form.type}
+                  onChange={(val) => setForm((p) => ({ ...p, type: val }))}
+                  options={[
+                    { label: "Info", value: "info" },
+                    { label: "Warning", value: "warning" },
+                    { label: "Emergency", value: "emergency" },
+                    { label: "Update", value: "update" },
+                  ]}
+                />
+              </div>
               <label className="flex items-center gap-2 mt-6"><input type="checkbox" checked={form.isPinned} onChange={(e) => setForm((p) => ({ ...p, isPinned: e.target.checked }))} className="h-4 w-4 rounded border-slate-600 text-indigo-500" /><span className="text-sm text-slate-300">Pin to top</span></label>
             </div>
             <div className="flex gap-3">
@@ -73,7 +100,7 @@ export default function AnnouncementsManagement({ announcements }: { announcemen
                 <p className="text-sm opacity-80 mt-0.5">{a.content}</p>
                 <p className="text-xs opacity-50 mt-1">{formatDate(a.createdAt)}</p>
               </div>
-              <button onClick={() => handleDelete(a._id)} disabled={deleting === a._id} className="shrink-0 opacity-60 hover:opacity-100">
+              <button onClick={() => setConfirmDelete(a._id)} disabled={deleting === a._id} className="shrink-0 opacity-60 hover:opacity-100">
                 {deleting === a._id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
               </button>
             </div>
@@ -81,6 +108,15 @@ export default function AnnouncementsManagement({ announcements }: { announcemen
         })}
         {announcements.length === 0 && <div className="glass-card p-12 text-center text-slate-500">No announcements.</div>}
       </div>
+
+      <ConfirmModal
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={executeDelete}
+        title="Delete Announcement"
+        message="Are you sure you want to delete this announcement?"
+        loading={!!deleting && deleting === confirmDelete}
+      />
     </div>
   );
 }

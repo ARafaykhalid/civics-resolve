@@ -11,7 +11,17 @@ export interface IVolunteerDoc extends Document {
   date: Date;
   spotsTotal: number;
   spotsFilled: number;
-  volunteers: mongoose.Types.ObjectId[];
+  customFields?: {
+    id: string;
+    label: string;
+    type: "text" | "number" | "email" | "textarea" | "checkbox";
+    required: boolean;
+  }[];
+  volunteers: {
+    userId: mongoose.Types.ObjectId;
+    responses: Record<string, any>;
+    joinedAt: Date;
+  }[];
   contactEmail: string;
   contactPhone?: string;
   images: string[];
@@ -34,7 +44,21 @@ const VolunteerSchema = new Schema<IVolunteerDoc>(
     date: { type: Date, required: true },
     spotsTotal: { type: Number, required: true },
     spotsFilled: { type: Number, default: 0 },
-    volunteers: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    customFields: [
+      {
+        id: { type: String },
+        label: { type: String },
+        type: { type: String, enum: ["text", "number", "email", "textarea", "checkbox"] },
+        required: { type: Boolean, default: false },
+      },
+    ],
+    volunteers: [
+      {
+        userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+        responses: { type: Schema.Types.Mixed, default: {} },
+        joinedAt: { type: Date, default: Date.now },
+      },
+    ],
     contactEmail: { type: String, required: true },
     contactPhone: { type: String },
     images: [{ type: String }],

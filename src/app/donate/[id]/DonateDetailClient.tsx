@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { submitDonationProof } from "@/actions/donations";
 import ImageUpload from "@/components/ImageUpload";
+import AuthModal from "@/components/AuthModal";
 import { ChevronLeft, Heart, Target, QrCode, Send, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
@@ -19,11 +20,16 @@ export default function DonateDetailClient({ campaign }: { campaign: any }) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [authModal, setAuthModal] = useState(false);
 
   const progress = campaign.goalAmount > 0 ? Math.min(Math.round((campaign.raisedAmount / campaign.goalAmount) * 100), 100) : 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!session?.user) {
+      setAuthModal(true);
+      return;
+    }
     setError("");
     setLoading(true);
     try {
@@ -147,6 +153,7 @@ export default function DonateDetailClient({ campaign }: { campaign: any }) {
           </div>
         </div>
       </div>
+      <AuthModal isOpen={authModal} onClose={() => setAuthModal(false)} message="You need to sign in to submit a donation proof." />
     </div>
   );
 }

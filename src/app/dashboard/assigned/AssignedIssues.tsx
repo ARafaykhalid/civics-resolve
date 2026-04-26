@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { updateComplaintStatus } from "@/actions/complaints";
 import ImageUpload from "@/components/ImageUpload";
+import Dropdown from "@/components/Dropdown";
 import { cn, getStatusColor, getPriorityColor, formatDate } from "@/lib/utils";
 import { RefreshCw, Loader2, ExternalLink, AlertTriangle } from "lucide-react";
 
@@ -15,12 +16,24 @@ export default function AssignedIssues({ complaints }: { complaints: any[] }) {
   const [proofImages, setProofImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const [error, setError] = useState("");
+
   const handleUpdate = async (complaintId: string) => {
-    if (!newStatus || !comment) return;
+    if (!newStatus || !comment) {
+      setError("Please provide both a new status and a progress note");
+      return;
+    }
+    setError("");
     setLoading(true);
-    await updateComplaintStatus({ complaintId, status: newStatus, comment, images: proofImages });
-    setModal(null); setLoading(false);
-    window.location.reload();
+    const result = await updateComplaintStatus({ complaintId, status: newStatus, comment, images: proofImages });
+    if (result.success) {
+      setModal(null); 
+      setLoading(false);
+      window.location.reload();
+    } else {
+      setError(result.error || "Failed to update status");
+      setLoading(false);
+    }
   };
 
   return (
@@ -57,11 +70,24 @@ export default function AssignedIssues({ complaints }: { complaints: any[] }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setModal(null)}>
           <div className="w-full max-w-lg glass-card p-6 m-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold text-white mb-4">Update Status</h3>
+            {error && <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">{error}</div>}
             <div className="space-y-4">
-              <div><label className="label-text">New Status</label><select value={newStatus} onChange={(e) => setNewStatus(e.target.value)} className="select-field"><option value="">Select...</option><option value="Verified">Verified</option><option value="In Progress">In Progress</option><option value="Resolved">Resolved</option></select></div>
+              <div className="z-20 relative">
+                <label className="label-text">New Status</label>
+                <Dropdown
+                  value={newStatus}
+                  onChange={setNewStatus}
+                  options={[
+                    { label: "Select...", value: "" },
+                    { label: "Verified", value: "Verified" },
+                    { label: "In Progress", value: "In Progress" },
+                    { label: "Resolved", value: "Resolved" },
+                  ]}
+                />
+              </div>
               <div><label className="label-text">Progress Notes</label><textarea value={comment} onChange={(e) => setComment(e.target.value)} className="input-field min-h-[100px]" placeholder="Describe progress..." /></div>
               <div><label className="label-text">Proof (optional)</label><ImageUpload images={proofImages} onChange={setProofImages} maxFiles={3} /></div>
-              <div className="flex gap-3"><button onClick={() => setModal(null)} className="btn-secondary flex-1">Cancel</button><button onClick={() => handleUpdate(modal)} disabled={!newStatus || !comment || loading} className="btn-primary flex-1">{loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Update"}</button></div>
+              <div className="flex gap-3"><button onClick={() => setModal(null)} className="btn-secondary flex-1">Cancel</button><button onClick={() => handleUpdate(modal)} disabled={loading} className="btn-primary flex-1">{loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Update"}</button></div>
             </div>
           </div>
         </div>

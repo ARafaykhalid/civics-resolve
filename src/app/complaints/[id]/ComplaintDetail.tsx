@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { upvoteComplaint } from "@/actions/complaints";
+import { toggleUpvoteComplaint } from "@/actions/complaints";
 import StatusTimeline from "@/components/StatusTimeline";
-import { ThumbsUp, MapPin, Calendar, User, Building2, ChevronLeft, Share2, Loader2 } from "lucide-react";
+import { ThumbsUp, MapPin, Calendar, User, Building2, ChevronLeft, Share2, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { cn, getStatusColor, getPriorityColor, formatDate, formatDateTime } from "@/lib/utils";
 
@@ -12,16 +12,27 @@ import { cn, getStatusColor, getPriorityColor, formatDate, formatDateTime } from
 export default function ComplaintDetail({ complaint }: { complaint: any }) {
   const { data: session } = useSession();
   const [upvotes, setUpvotes] = useState(complaint.upvotes);
-  const [hasVoted, setHasVoted] = useState(false);
+  
+  // Initialize hasVoted by checking if current user's ID is in upvotedBy array
+  const initialHasVoted = session?.user?.id ? complaint.upvotedBy?.includes(session.user.id) : false;
+  const [hasVoted, setHasVoted] = useState(initialHasVoted);
+  
   const [voting, setVoting] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [authModal, setAuthModal] = useState(false);
 
   const handleUpvote = async () => {
-    if (hasVoted || voting) return;
+    if (!session?.user) {
+      setAuthModal(true);
+      return;
+    }
+    if (voting) return;
     setVoting(true);
-    const visitorId = session?.user?.id || `anon_${Math.random().toString(36).slice(2)}`;
-    const result = await upvoteComplaint(complaint._id, visitorId);
-    if (result.success) { setUpvotes(result.data?.upvotes || upvotes + 1); setHasVoted(true); }
+    const result = await toggleUpvoteComplaint(complaint._id);
+    if (result.success && result.data) {
+      setUpvotes(result.data.upvotes);
+      setHasVoted(result.data.hasVoted);
+    }
     setVoting(false);
   };
 
@@ -128,6 +139,22 @@ export default function ComplaintDetail({ complaint }: { complaint: any }) {
           </div>
         </div>
       </div>
+
+      {authModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setAuthModal(false)}>
+          <div className="w-full max-w-sm glass-card p-6 m-4 text-center" onClick={(e) => e.stopPropagation()}>
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-indigo-500/10 mb-4">
+              <AlertCircle className="h-6 w-6 text-indigo-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-2">Authentication Required</h3>
+            <p className="text-sm text-slate-400 mb-6">You need to sign in to upvote issues or submit reports.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setAuthModal(false)} className="btn-secondary flex-1">Cancel</button>
+              <Link href="/login" className="btn-primary flex-1">Sign In</Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

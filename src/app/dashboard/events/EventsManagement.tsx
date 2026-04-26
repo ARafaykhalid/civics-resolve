@@ -15,11 +15,20 @@ export default function EventsManagement({ events }: { events: any[] }) {
 
   const update = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
 
+  const [error, setError] = useState("");
+
   const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault(); setLoading(true);
-    await createEvent({ ...form, image: eventImages[0] || "", maxAttendees: form.maxAttendees ? parseInt(form.maxAttendees) : undefined });
-    setLoading(false); setShowForm(false);
-    window.location.reload();
+    e.preventDefault(); 
+    setError("");
+    setLoading(true);
+    const result = await createEvent({ ...form, image: eventImages[0] || "", maxAttendees: form.maxAttendees ? parseInt(form.maxAttendees) : undefined });
+    if (result.success) {
+      setLoading(false); setShowForm(false);
+      window.location.reload();
+    } else {
+      setError(result.error || "Failed to create event");
+      setLoading(false);
+    }
   };
 
   return (
@@ -32,6 +41,7 @@ export default function EventsManagement({ events }: { events: any[] }) {
       {showForm && (
         <div className="glass-card p-6 mb-6">
           <form onSubmit={handleCreate} className="grid gap-4 sm:grid-cols-2">
+            {error && <div className="sm:col-span-2 rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">{error}</div>}
             <div className="sm:col-span-2"><label className="label-text">Title *</label><input value={form.title} onChange={(e) => update("title", e.target.value)} className="input-field" required /></div>
             <div><label className="label-text">Location *</label><input value={form.location} onChange={(e) => update("location", e.target.value)} className="input-field" required /></div>
             <div><label className="label-text">Organizer *</label><input value={form.organizer} onChange={(e) => update("organizer", e.target.value)} className="input-field" required /></div>

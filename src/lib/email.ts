@@ -145,3 +145,26 @@ export async function sendDonationReceivedEmail(
     `,
   });
 }
+
+/** Send verification code for registration */
+export async function sendVerificationEmail(email: string, code: string) {
+  return sendEmail({
+    to: email,
+    subject: `Your ${APP_NAME} Verification Code`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0;">${APP_NAME}</h1>
+        </div>
+        <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 12px 12px;">
+          <h2 style="color: #1f2937;">Verify Your Account</h2>
+          <p style="color: #4b5563;">Thank you for registering. Please use the verification code below to complete your registration:</p>
+          <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; margin: 24px 0; text-align: center;">
+            <span style="font-size: 32px; font-weight: bold; letter-spacing: 4px; color: #4f46e5;">${code}</span>
+          </div>
+          <p style="color: #6b7280; font-size: 14px;">This code will expire in 10 minutes.</p>
+        </div>
+      </div>
+    `,
+  });
+}

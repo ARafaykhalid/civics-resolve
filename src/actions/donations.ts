@@ -23,7 +23,10 @@ export async function createDonationCampaign(data: {
     const campaign = await DonationCampaign.create({ ...validated, createdBy: session.user.id });
     revalidatePath("/donate");
     return { success: true, data: { id: campaign._id.toString() } };
-  } catch (error) {
+  } catch (error: any) {
+    if (error.name === "ZodError") {
+      return { success: false, error: (error.issues?.[0]?.message || error.errors?.[0]?.message || "Validation failed") };
+    }
     console.error("Create campaign error:", error);
     return { success: false, error: "Failed to create campaign" };
   }
@@ -87,7 +90,10 @@ export async function submitDonationProof(data: {
 
     revalidatePath(`/donate/${validated.campaignId}`);
     return { success: true, message: "Donation proof submitted. Admin will verify it." };
-  } catch (error) {
+  } catch (error: any) {
+    if (error.name === "ZodError") {
+      return { success: false, error: (error.issues?.[0]?.message || error.errors?.[0]?.message || "Validation failed") };
+    }
     console.error("Submit donation proof error:", error);
     return { success: false, error: "Failed to submit proof" };
   }
@@ -158,6 +164,25 @@ export async function toggleCampaignStatus(campaignId: string) {
     return { success: true, message: campaign.isActive ? "Activated" : "Deactivated" };
   } catch (error) {
     console.error("Toggle campaign error:", error);
+    return { success: false, error: "Failed" };
+  }
+}
+
+/** Update campaign progress (admin) */
+export async function updateDonationCampaign(id: string, updates: { goalAmount?: number; raisedAmount?: number }) {
+  try {
+    await connectDB();
+    const session = await auth();
+    if (!session?.user || (session.user as { role: string }).role !== "admin") return { success: false, error: "Admin required" };
+
+    const campaign = await DonationCampaign.findByIdAndUpdate(id, { $set: updates }, { new: true });
+    if (!campaign) return { success: false, error: "Not found" };
+
+    revalidatePath("/donate");
+    revalidatePath("/dashboard");
+    return { success: true, message: "Campaign updated" };
+  } catch (error) {
+    console.error("Update campaign error:", error);
     return { success: false, error: "Failed" };
   }
 }

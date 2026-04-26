@@ -7,6 +7,9 @@ export interface IUserDoc extends Document {
   role: "user" | "admin" | "ngo" | "authority";
   organization?: string;
   categories?: string[];
+  isVerified: boolean;
+  verificationCode?: string;
+  verificationCodeExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -23,6 +26,9 @@ const UserSchema = new Schema<IUserDoc>(
     },
     organization: { type: String },
     categories: [{ type: String }],
+    isVerified: { type: Boolean, default: false },
+    verificationCode: { type: String },
+    verificationCodeExpires: { type: Date },
   },
   { timestamps: true }
 );

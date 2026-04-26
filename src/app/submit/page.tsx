@@ -2,16 +2,22 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { createComplaint } from "@/actions/complaints";
 import ImageUpload from "@/components/ImageUpload";
+import AuthModal from "@/components/AuthModal";
+import Dropdown from "@/components/Dropdown";
 import { Send, MapPin, Loader2, AlertCircle, EyeOff } from "lucide-react";
 
 const categories = ["Road", "Water", "Electricity", "Garbage", "Safety", "Other"];
+const categoryOptions = categories.map((cat) => ({ label: cat, value: cat }));
 
 export default function SubmitPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [authModal, setAuthModal] = useState(false);
   const [form, setForm] = useState({
     title: "", description: "", category: "", address: "",
     lat: "", lng: "", images: [] as string[], isAnonymous: false,
@@ -19,6 +25,17 @@ export default function SubmitPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!session?.user) {
+      setAuthModal(true);
+      return;
+    }
+    
+    // Manual validation for category since dropdown doesn't have native "required"
+    if (!form.category) {
+      setError("Please select a category.");
+      return;
+    }
+
     setError("");
     setLoading(true);
     try {
@@ -55,10 +72,13 @@ export default function SubmitPage() {
 
           <div>
             <label htmlFor="category" className="label-text">Category *</label>
-            <select id="category" value={form.category} onChange={(e) => update("category", e.target.value)} className="select-field" required>
-              <option value="">Select a category</option>
-              {categories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
-            </select>
+            <Dropdown
+              id="category"
+              value={form.category}
+              onChange={(val) => update("category", val)}
+              options={categoryOptions}
+              placeholder="Select a category"
+            />
           </div>
 
           <div>
@@ -95,6 +115,7 @@ export default function SubmitPage() {
           </button>
         </form>
       </div>
+      <AuthModal isOpen={authModal} onClose={() => setAuthModal(false)} message="You need to sign in to submit a report." />
     </div>
   );
 }

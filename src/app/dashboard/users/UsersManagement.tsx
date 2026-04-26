@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { updateUserRole, deleteUser } from "@/actions/complaints";
+import ConfirmModal from "@/components/ConfirmModal";
+import Dropdown from "@/components/Dropdown";
 import { formatDate } from "@/lib/utils";
 import { Trash2, Loader2, Search, Shield } from "lucide-react";
 
@@ -9,6 +11,7 @@ import { Trash2, Loader2, Search, Shield } from "lucide-react";
 export default function UsersManagement({ users }: { users: any[] }) {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const filtered = users.filter((u) =>
     u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())
@@ -21,11 +24,12 @@ export default function UsersManagement({ users }: { users: any[] }) {
     window.location.reload();
   };
 
-  const handleDelete = async (userId: string) => {
-    if (!confirm("Delete this user?")) return;
-    setLoading(userId);
-    await deleteUser(userId);
+  const executeDelete = async () => {
+    if (!confirmDelete) return;
+    setLoading(confirmDelete);
+    await deleteUser(confirmDelete);
     setLoading(null);
+    setConfirmDelete(null);
     window.location.reload();
   };
 
@@ -73,17 +77,23 @@ export default function UsersManagement({ users }: { users: any[] }) {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <select value={u.role} onChange={(e) => handleRoleChange(u._id, e.target.value)}
-                      className="rounded-lg bg-transparent border border-white/10 text-sm text-white px-2 py-1 focus:ring-1 focus:ring-indigo-500">
-                      <option value="user">User</option>
-                      <option value="admin">Admin</option>
-                      <option value="ngo">NGO</option>
-                      <option value="authority">Authority</option>
-                    </select>
+                    <div className="w-[140px]">
+                      <Dropdown
+                        value={u.role}
+                        onChange={(val) => handleRoleChange(u._id, val)}
+                        options={[
+                          { label: "User", value: "user" },
+                          { label: "Admin", value: "admin" },
+                          { label: "NGO", value: "ngo" },
+                          { label: "Authority", value: "authority" },
+                        ]}
+                        className="text-xs"
+                      />
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-slate-500 text-xs">{formatDate(u.createdAt)}</td>
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => handleDelete(u._id)} disabled={loading === u._id}
+                    <button onClick={() => setConfirmDelete(u._id)} disabled={loading === u._id}
                       className="rounded-lg p-1.5 text-slate-500 hover:bg-red-500/10 hover:text-red-400">
                       {loading === u._id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                     </button>
@@ -95,6 +105,15 @@ export default function UsersManagement({ users }: { users: any[] }) {
         </div>
         {filtered.length === 0 && <div className="p-12 text-center text-slate-500">No users found.</div>}
       </div>
+
+      <ConfirmModal
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={executeDelete}
+        title="Delete User"
+        message="Are you sure you want to delete this user? This action cannot be undone."
+        loading={!!loading && loading === confirmDelete}
+      />
     </div>
   );
 }

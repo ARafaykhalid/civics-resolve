@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { useState, useCallback } from "react";
+import Dropdown from "@/components/Dropdown";
 
 interface FilterBarProps {
   currentStatus?: string;
@@ -58,37 +59,34 @@ export default function FilterBar({ currentStatus, currentCategory, currentSort,
       <div className="flex flex-wrap items-center gap-3">
         <SlidersHorizontal className="h-4 w-4 text-slate-500" />
 
-        <select
-          value={currentStatus || ""}
-          onChange={(e) => updateFilter("status", e.target.value)}
-          className="select-field w-auto text-sm py-2"
-        >
-          <option value="">All Status</option>
-          {statuses.map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
+        <div className="w-[160px]">
+          <Dropdown
+            value={currentStatus || ""}
+            onChange={(val) => updateFilter("status", val)}
+            options={statuses.map(s => ({ label: s, value: s }))}
+            placeholder="All Status"
+            className="text-sm"
+          />
+        </div>
 
-        <select
-          value={currentCategory || ""}
-          onChange={(e) => updateFilter("category", e.target.value)}
-          className="select-field w-auto text-sm py-2"
-        >
-          <option value="">All Categories</option>
-          {categories.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
+        <div className="w-[160px]">
+          <Dropdown
+            value={currentCategory || ""}
+            onChange={(val) => updateFilter("category", val)}
+            options={categories.map(c => ({ label: c, value: c }))}
+            placeholder="All Categories"
+            className="text-sm"
+          />
+        </div>
 
-        <select
-          value={currentSort || "latest"}
-          onChange={(e) => updateFilter("sort", e.target.value)}
-          className="select-field w-auto text-sm py-2"
-        >
-          {sortOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
+        <div className="w-[160px]">
+          <Dropdown
+            value={currentSort || "latest"}
+            onChange={(val) => updateFilter("sort", val)}
+            options={sortOptions}
+            className="text-sm"
+          />
+        </div>
 
         {(currentStatus || currentCategory || currentSearch) && (
           <button

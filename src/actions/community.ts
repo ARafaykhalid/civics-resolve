@@ -22,9 +22,12 @@ export async function createAnnouncement(data: { title: string; content: string;
     revalidatePath("/");
     revalidatePath("/dashboard");
     return { success: true, message: "Announcement created" };
-  } catch (error) {
+  } catch (error: any) {
+    if (error.name === "ZodError") {
+      return { success: false, error: (error.issues?.[0]?.message || error.errors?.[0]?.message || "Validation failed") };
+    }
     console.error("Create announcement error:", error);
-    return { success: false, error: "Failed" };
+    return { success: false, error: "Failed to create announcement" };
   }
 }
 
@@ -66,6 +69,7 @@ export async function deleteAnnouncement(id: string) {
 export async function createVolunteerOpportunity(data: {
   title: string; description: string; category: string; location: string;
   date: string; spotsTotal: number; contactEmail: string; contactPhone?: string; images: string[];
+  customFields?: { id: string; label: string; type: "text" | "number" | "email" | "textarea" | "checkbox"; required: boolean; }[];
 }) {
   try {
     const validated = volunteerSchema.parse(data);
@@ -75,13 +79,22 @@ export async function createVolunteerOpportunity(data: {
     const role = (session.user as { role: string }).role;
     if (!["admin", "ngo"].includes(role)) return { success: false, error: "Insufficient permissions" };
 
-    await Volunteer.create({ ...validated, date: new Date(validated.date), isActive: true, createdBy: session.user.id });
+    await Volunteer.create({
+      ...validated,
+      customFields: data.customFields || [],
+      date: new Date(validated.date),
+      isActive: true,
+      createdBy: session.user.id
+    });
     revalidatePath("/volunteer");
     revalidatePath("/dashboard");
     return { success: true, message: "Volunteer opportunity created" };
-  } catch (error) {
+  } catch (error: any) {
+    if (error.name === "ZodError") {
+      return { success: false, error: (error.issues?.[0]?.message || error.errors?.[0]?.message || "Validation failed") };
+    }
     console.error("Create volunteer error:", error);
-    return { success: false, error: "Failed" };
+    return { success: false, error: "Failed to create opportunity" };
   }
 }
 
@@ -105,7 +118,7 @@ export async function getVolunteerOpportunities(activeOnly = true) {
   }
 }
 
-export async function joinVolunteer(opportunityId: string) {
+export async function joinVolunteer(opportunityId: string, responses: Record<string, any> = {}) {
   try {
     await connectDB();
     const session = await auth();
@@ -116,16 +129,18 @@ export async function joinVolunteer(opportunityId: string) {
     if (opportunity.spotsFilled >= opportunity.spotsTotal) return { success: false, error: "No spots available" };
 
     const userId = new mongoose.Types.ObjectId(session.user.id);
-    if (opportunity.volunteers.some((v) => v.equals(userId))) return { success: false, error: "Already joined" };
+    if (opportunity.volunteers.some((v: any) => v.userId?.equals(userId) || v.equals?.(userId))) {
+      return { success: false, error: "Already joined" };
+    }
 
-    opportunity.volunteers.push(userId);
+    opportunity.volunteers.push({ userId, responses, joinedAt: new Date() });
     opportunity.spotsFilled += 1;
     await opportunity.save();
     revalidatePath("/volunteer");
-    return { success: true, message: "Joined!" };
+    return { success: true, message: "Joined successfully!" };
   } catch (error) {
     console.error("Join volunteer error:", error);
-    return { success: false, error: "Failed" };
+    return { success: false, error: "Failed to join" };
   }
 }
 
@@ -153,9 +168,12 @@ export async function createEvent(data: {
     revalidatePath("/events");
     revalidatePath("/dashboard");
     return { success: true, message: "Event created" };
-  } catch (error) {
+  } catch (error: any) {
+    if (error.name === "ZodError") {
+      return { success: false, error: (error.issues?.[0]?.message || error.errors?.[0]?.message || "Validation failed") };
+    }
     console.error("Create event error:", error);
-    return { success: false, error: "Failed" };
+    return { success: false, error: "Failed to create event" };
   }
 }
 
@@ -195,10 +213,30 @@ export async function joinEvent(eventId: string) {
 
     event.attendees.push(userId);
     await event.save();
-    revalidatePath("/events");
     return { success: true, message: "Registered!" };
   } catch (error) {
     console.error("Join event error:", error);
+    return { success: false, error: "Failed" };
+  }
+}
+
+/** Update volunteer opportunity progress (admin/ngo) */
+export async function updateVolunteerOpportunity(id: string, updates: { spotsTotal?: number; spotsFilled?: number }) {
+  try {
+    await connectDB();
+    const session = await auth();
+    if (!session?.user) return { success: false, error: "Auth required" };
+    const role = (session.user as { role: string }).role;
+    if (!["admin", "ngo"].includes(role)) return { success: false, error: "Insufficient permissions" };
+
+    const volunteer = await Volunteer.findByIdAndUpdate(id, { $set: updates }, { new: true });
+    if (!volunteer) return { success: false, error: "Not found" };
+
+    revalidatePath("/volunteer");
+    revalidatePath("/dashboard");
+    return { success: true, message: "Volunteer opportunity updated" };
+  } catch (error) {
+    console.error("Update volunteer error:", error);
     return { success: false, error: "Failed" };
   }
 }
