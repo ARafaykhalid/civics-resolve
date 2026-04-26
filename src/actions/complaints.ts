@@ -199,7 +199,7 @@ export async function getComplaints(filters: ComplaintFilters = {}) {
         : null,
       upvotedBy:
         c.upvotedBy?.map((id: mongoose.Types.ObjectId) => id.toString()) || [],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       timeline:
         c.timeline?.map((t: any) => ({
           ...t,
@@ -259,7 +259,7 @@ export async function getComplaintById(id: string) {
         : null,
       upvotedBy:
         c.upvotedBy?.map((id: mongoose.Types.ObjectId) => id.toString()) || [],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       timeline:
         c.timeline?.map((t: any) => ({
           ...t,
@@ -549,7 +549,7 @@ export async function getAllUsers() {
       return { success: false, error: "Admin required" };
 
     const users = await User.find().select("-password").lean();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     return {
       success: true,
       data: users.map((u: any) => ({

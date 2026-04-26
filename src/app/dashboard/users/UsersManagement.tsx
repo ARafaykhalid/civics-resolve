@@ -13,8 +13,10 @@ export default function UsersManagement({ users }: { users: any[] }) {
   const [loading, setLoading] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
-  const filtered = users.filter((u) =>
-    u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())
+  const filtered = users.filter(
+    (u) =>
+      u.name.toLowerCase().includes(search.toLowerCase()) ||
+      u.email.toLowerCase().includes(search.toLowerCase()),
   );
 
   const handleRoleChange = async (userId: string, role: string) => {
@@ -47,19 +49,33 @@ export default function UsersManagement({ users }: { users: any[] }) {
       <div className="glass-card p-4 mb-6">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-          <input type="text" placeholder="Search users..." value={search} onChange={(e) => setSearch(e.target.value)} className="input-field pl-9 py-2" />
+          <input
+            type="text"
+            placeholder="Search users..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="input-field pl-9 py-2"
+          />
         </div>
       </div>
 
-      <div className="glass-card overflow-hidden">
+      <div className="glass-card">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/5">
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">User</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Role</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Joined</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">
+                  User
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">
+                  Role
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">
+                  Joined
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -71,7 +87,9 @@ export default function UsersManagement({ users }: { users: any[] }) {
                         {u.name.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-white">{u.name}</p>
+                        <p className="text-sm font-medium text-white">
+                          {u.name}
+                        </p>
                         <p className="text-xs text-slate-500">{u.email}</p>
                       </div>
                     </div>
@@ -91,11 +109,19 @@ export default function UsersManagement({ users }: { users: any[] }) {
                       />
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-slate-500 text-xs">{formatDate(u.createdAt)}</td>
+                  <td className="px-4 py-3 text-slate-500 text-xs">
+                    {formatDate(u.createdAt)}
+                  </td>
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => setConfirmDelete(u._id)} disabled={loading === u._id}
+                    <button
+                      onClick={() => setConfirmDelete(u._id)}
+                      disabled={loading === u._id}
                       className="rounded-lg p-1.5 text-slate-500 hover:bg-red-500/10 hover:text-red-400">
-                      {loading === u._id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                      {loading === u._id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
                     </button>
                   </td>
                 </tr>
@@ -103,7 +129,9 @@ export default function UsersManagement({ users }: { users: any[] }) {
             </tbody>
           </table>
         </div>
-        {filtered.length === 0 && <div className="p-12 text-center text-slate-500">No users found.</div>}
+        {filtered.length === 0 && (
+          <div className="p-12 text-center text-slate-500">No users found.</div>
+        )}
       </div>
 
       <ConfirmModal

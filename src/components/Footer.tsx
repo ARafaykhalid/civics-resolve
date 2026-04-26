@@ -1,11 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Shield, Globe, ExternalLink, Heart } from "lucide-react";
 
 export default function Footer() {
   const { data: session } = useSession();
+  const pathname = usePathname();
+
+  if (pathname?.startsWith("/dashboard")) return null;
 
   return (
     <footer className="border-t border-white/5 bg-slate-950">

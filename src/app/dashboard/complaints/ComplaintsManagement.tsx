@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export default function ComplaintsManagement({
   complaints,
   authorities,
@@ -205,7 +205,7 @@ export default function ComplaintsManagement({
                   <td className="px-4 py-3">
                     <span
                       className={cn(
-                        "rounded-full border px-2.5 py-0.5 text-[11px] font-semibold",
+                        "whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[11px] font-semibold",
                         getStatusColor(c.status),
                       )}>
                       {c.status}
@@ -214,7 +214,7 @@ export default function ComplaintsManagement({
                   <td className="px-4 py-3">
                     <span
                       className={cn(
-                        "rounded-full border px-2.5 py-0.5 text-[11px] font-semibold",
+                        "whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[11px] font-semibold",
                         getPriorityColor(c.priority),
                       )}>
                       {c.priority}

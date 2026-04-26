@@ -33,7 +33,7 @@ export default function DonationsVerification({ transactions, campaigns }: { tra
       <h1 className="text-2xl font-bold text-white mb-6">Verify Donations</h1>
 
       <div className="glass-card p-4 mb-6">
-        <div className="flex gap-2">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           {["pending", "verified", "rejected", "all"].map((f) => (
             <button key={f} onClick={() => setFilter(f)}
               className={cn("rounded-lg px-4 py-2 text-sm font-medium transition-all", filter === f ? "bg-indigo-500/15 text-indigo-400" : "text-slate-400 hover:bg-white/5 hover:text-white")}>
