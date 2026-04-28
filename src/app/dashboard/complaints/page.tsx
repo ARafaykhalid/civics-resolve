@@ -5,7 +5,8 @@ import ComplaintsManagement from "./ComplaintsManagement";
 
 export default async function DashboardComplaintsPage() {
   const session = await auth();
-  if (!session?.user || (session.user as { role: string }).role !== "admin") redirect("/dashboard");
+  if (!session?.user || (session.user as { role: string }).role !== "admin")
+    redirect("/dashboard");
 
   const [complaintsResult, authoritiesResult] = await Promise.all([
     getComplaints({ limit: 100 }),
@@ -14,8 +15,12 @@ export default async function DashboardComplaintsPage() {
 
   return (
     <ComplaintsManagement
-      complaints={complaintsResult.success ? complaintsResult.data?.data || [] : []}
-      authorities={authoritiesResult.success ? authoritiesResult.data || [] : []}
+      complaints={
+        complaintsResult.success ? complaintsResult.data?.data || [] : []
+      }
+      authorities={
+        authoritiesResult.success ? authoritiesResult.data || [] : []
+      }
     />
   );
 }

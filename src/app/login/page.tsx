@@ -1,13 +1,12 @@
 "use client";
 
 import { Suspense, useState, useEffect } from "react";
-import { redirect, useRouter, useSearchParams } from "next/navigation";
+import { redirect, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn, useSession } from "next-auth/react";
 import { LogIn, Mail, Lock, Loader2, Shield } from "lucide-react";
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -48,8 +47,7 @@ function LoginForm() {
             : result.error,
         );
       } else {
-        router.push("/");
-        router.refresh();
+        redirect("/");
       }
     } catch {
       setError("Something went wrong");

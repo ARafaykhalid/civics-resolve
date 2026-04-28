@@ -256,9 +256,7 @@ export default function HomeClient({
               <h1 className="hero-title text-5xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl leading-tight">
                 {splitText("Report. Track.")}
                 <br />
-                <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                  {splitText("Resolve.")}
-                </span>
+                {splitText("Resolve.")}
               </h1>
               <p className="hero-desc mt-6 text-lg text-slate-400 max-w-xl">
                 A modern platform to empower your community. Report civic

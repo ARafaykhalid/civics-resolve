@@ -102,7 +102,7 @@ export default function Navbar() {
                   )}
                 </div>
                 <button
-                  onClick={() => signOut({ callbackUrl: "/" })}
+                  onClick={() => signOut({ redirectTo: "/" })}
                   className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-400 transition-colors hover:bg-red-500/10 hover:text-red-400">
                   <LogOut className="h-4 w-4" /> Sign Out
                 </button>
@@ -174,7 +174,7 @@ export default function Navbar() {
                   <button
                     onClick={() => {
                       setMobileOpen(false);
-                      signOut({ callbackUrl: "/" });
+                      signOut({ redirectTo: "/" });
                     }}
                     className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-400 hover:bg-red-500/10">
                     <LogOut className="h-4 w-4" /> Sign Out
