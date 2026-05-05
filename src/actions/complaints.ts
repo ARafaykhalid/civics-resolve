@@ -8,6 +8,7 @@ import Complaint from "@/models/Complaint";
 import Authority from "@/models/Authority";
 import Vote from "@/models/Vote";
 import User from "@/models/User";
+import Comment from "@/models/Comment";
 import {
   complaintSchema,
   statusUpdateSchema,
@@ -162,9 +163,11 @@ export async function getComplaints(filters: ComplaintFilters = {}) {
       }
     }
 
+    // Status priority: Pending=0, Verified=1, In Progress=2, Resolved=3
+    // Default sort: by status order, then newest first within each status
     let sortQuery: Record<string, 1 | -1> = { createdAt: -1 };
     if (sort === "oldest") sortQuery = { createdAt: 1 };
-    if (sort === "most-upvoted") sortQuery = { upvotes: -1 };
+    else if (sort === "most-upvoted") sortQuery = { upvotes: -1 };
 
     const skip = (page - 1) * limit;
 
@@ -179,10 +182,27 @@ export async function getComplaints(filters: ComplaintFilters = {}) {
       Complaint.countDocuments(query),
     ]);
 
+    // Sort by status order: Pending → Verified → In Progress → Resolved
+    const statusOrder: Record<string, number> = {
+      Pending: 0,
+      Verified: 1,
+      "In Progress": 2,
+      Resolved: 3,
+    };
+    if (sort === "latest" || !sort) {
+      complaints.sort((a: any, b: any) => {
+        const sa = statusOrder[a.status] ?? 99;
+        const sb = statusOrder[b.status] ?? 99;
+        if (sa !== sb) return sa - sb;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const serialized = complaints.map((c: any) => ({
       ...c,
       _id: c._id.toString(),
+      issueId: c.issueId,
       createdBy: c.createdBy
         ? {
             _id: c.createdBy._id?.toString(),
@@ -207,6 +227,12 @@ export async function getComplaints(filters: ComplaintFilters = {}) {
           updatedBy: t.updatedBy?.toString(),
           createdAt: t.createdAt?.toISOString?.() || t.createdAt,
         })) || [],
+      feedback: c.feedback
+        ? {
+            ...c.feedback,
+            createdAt: c.feedback.createdAt?.toISOString?.() || c.feedback.createdAt,
+          }
+        : null,
       createdAt: c.createdAt?.toISOString?.() || c.createdAt,
       updatedAt: c.updatedAt?.toISOString?.() || c.updatedAt,
     }));
@@ -227,14 +253,27 @@ export async function getComplaints(filters: ComplaintFilters = {}) {
   }
 }
 
-/** Get a single complaint by ID */
+/** Get a single complaint by ID or issueId */
 export async function getComplaintById(id: string) {
   try {
     await connectDB();
-    const complaint = await Complaint.findById(id)
-      .populate("createdBy", "name email")
-      .populate("assignedTo", "name email organization role")
-      .lean();
+    // Try numeric issueId first, then ObjectId
+    const isNumeric = /^\d+$/.test(id);
+    let complaint;
+    if (isNumeric) {
+      complaint = await Complaint.findOne({ issueId: parseInt(id) })
+        .populate("createdBy", "name email")
+        .populate("assignedTo", "name email organization role")
+        .lean();
+    }
+    if (!complaint) {
+      try {
+        complaint = await Complaint.findById(id)
+          .populate("createdBy", "name email")
+          .populate("assignedTo", "name email organization role")
+          .lean();
+      } catch { /* invalid ObjectId */ }
+    }
     if (!complaint) return { success: false, error: "Complaint not found" };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -242,6 +281,7 @@ export async function getComplaintById(id: string) {
     const serialized = {
       ...c,
       _id: c._id.toString(),
+      issueId: c.issueId,
       createdBy: c.createdBy
         ? {
             _id: c.createdBy._id?.toString(),
@@ -267,6 +307,12 @@ export async function getComplaintById(id: string) {
           updatedBy: t.updatedBy?.toString(),
           createdAt: t.createdAt?.toISOString?.() || t.createdAt,
         })) || [],
+      feedback: c.feedback
+        ? {
+            ...c.feedback,
+            createdAt: c.feedback.createdAt?.toISOString?.() || c.feedback.createdAt,
+          }
+        : null,
       createdAt: c.createdAt?.toISOString?.() || c.createdAt,
       updatedAt: c.updatedAt?.toISOString?.() || c.updatedAt,
     };
@@ -461,6 +507,62 @@ export async function deleteComplaint(complaintId: string) {
   }
 }
 
+/** Edit complaint details (creator or admin) */
+export async function editComplaint(data: {
+  complaintId: string;
+  title?: string;
+  description?: string;
+  category?: string;
+  location?: { address: string; lat?: number; lng?: number };
+  images?: string[];
+}) {
+  try {
+    await connectDB();
+    const session = await auth();
+    if (!session?.user)
+      return { success: false, error: "Authentication required" };
+
+    const complaint = await Complaint.findById(data.complaintId);
+    if (!complaint) return { success: false, error: "Complaint not found" };
+
+    const userRole = (session.user as { role: string }).role;
+    const isAdmin = userRole === "admin";
+    const isCreator = complaint.createdBy?.toString() === session.user.id;
+
+    if (!isAdmin && !isCreator) {
+      return { success: false, error: "You can only edit your own complaints" };
+    }
+
+    // Only allow edits on Pending/Verified complaints (unless admin)
+    if (!isAdmin && !["Pending", "Verified"].includes(complaint.status)) {
+      return {
+        success: false,
+        error: "Cannot edit a complaint that is already In Progress or Resolved",
+      };
+    }
+
+    // Apply updates
+    if (data.title) complaint.title = data.title;
+    if (data.description) complaint.description = data.description;
+    if (data.category) {
+      complaint.category = data.category as any;
+    }
+    if (data.location) complaint.location = data.location as any;
+    if (data.images !== undefined) complaint.images = data.images;
+
+    await complaint.save();
+
+    revalidatePath(`/complaints/${data.complaintId}`);
+    revalidatePath("/complaints");
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/my-complaints");
+    return { success: true, message: "Complaint updated successfully" };
+  } catch (error) {
+    console.error("Edit complaint error:", error);
+    return { success: false, error: "Failed to edit complaint" };
+  }
+}
+
 /** Dashboard analytics */
 export async function getDashboardAnalytics() {
   try {
@@ -573,11 +675,75 @@ export async function updateUserRole(userId: string, role: string) {
     if (!session?.user || (session.user as { role: string }).role !== "admin")
       return { success: false, error: "Admin required" };
     await User.findByIdAndUpdate(userId, { role });
+
+    // If demoting away from authority/ngo, remove Authority record
+    if (!["authority", "ngo"].includes(role)) {
+      await Authority.deleteMany({ userId: new mongoose.Types.ObjectId(userId) });
+    }
+
     revalidatePath("/dashboard");
+    revalidatePath("/dashboard/users");
     return { success: true, message: "Role updated" };
   } catch (error) {
     console.error("Update role error:", error);
     return { success: false, error: "Failed" };
+  }
+}
+
+/** Update user role with authority details (admin only) */
+export async function updateUserRoleWithDetails(data: {
+  userId: string;
+  role: string;
+  organization?: string;
+  authorityType?: "ngo" | "authority";
+  categories?: string[];
+  contactPhone?: string;
+  address?: string;
+}) {
+  try {
+    await connectDB();
+    const session = await auth();
+    if (!session?.user || (session.user as { role: string }).role !== "admin")
+      return { success: false, error: "Admin required" };
+
+    const user = await User.findById(data.userId);
+    if (!user) return { success: false, error: "User not found" };
+
+    // Update user role and organization
+    user.role = data.role as "user" | "admin" | "ngo" | "authority";
+    if (data.organization) user.organization = data.organization;
+    if (data.categories) user.categories = data.categories;
+    await user.save();
+
+    // If promoting to authority or ngo, create/update Authority record
+    if (["authority", "ngo"].includes(data.role)) {
+      const authorityData = {
+        name: data.organization || user.name,
+        email: user.email,
+        type: (data.authorityType || data.role) as "ngo" | "authority",
+        categories: data.categories || [],
+        contactPhone: data.contactPhone || "",
+        address: data.address || "",
+        userId: user._id,
+      };
+
+      await Authority.findOneAndUpdate(
+        { userId: user._id },
+        authorityData,
+        { upsert: true, new: true }
+      );
+    } else {
+      // If demoting, remove Authority record
+      await Authority.deleteMany({ userId: user._id });
+    }
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/users");
+    revalidatePath("/dashboard/complaints");
+    return { success: true, message: "Role and details updated" };
+  } catch (error) {
+    console.error("Update role with details error:", error);
+    return { success: false, error: "Failed to update role" };
   }
 }
 
@@ -595,6 +761,273 @@ export async function deleteUser(userId: string) {
     return { success: true, message: "User deleted" };
   } catch (error) {
     console.error("Delete user error:", error);
+    return { success: false, error: "Failed" };
+  }
+}
+
+// ============ COMMENTS ============
+
+/** Add a comment to a complaint or campaign */
+export async function addComment(data: {
+  targetType: "complaint" | "campaign";
+  targetId: string;
+  content: string;
+}) {
+  try {
+    await connectDB();
+    const session = await auth();
+    if (!session?.user) return { success: false, error: "Login required" };
+    if (!data.content || data.content.trim().length < 2)
+      return { success: false, error: "Comment must be at least 2 characters" };
+    if (data.content.length > 1000)
+      return { success: false, error: "Comment must be under 1000 characters" };
+
+    const comment = await Comment.create({
+      targetType: data.targetType,
+      targetId: new mongoose.Types.ObjectId(data.targetId),
+      userId: new mongoose.Types.ObjectId(session.user.id),
+      userName: session.user.name || "User",
+      content: data.content.trim(),
+    });
+
+    const path = data.targetType === "complaint"
+      ? `/complaints/${data.targetId}`
+      : `/donate/${data.targetId}`;
+    revalidatePath(path);
+
+    return {
+      success: true,
+      data: {
+        _id: comment._id.toString(),
+        userName: comment.userName,
+        content: comment.content,
+        createdAt: comment.createdAt.toISOString(),
+      },
+    };
+  } catch (error) {
+    console.error("Add comment error:", error);
+    return { success: false, error: "Failed to post comment" };
+  }
+}
+
+/** Get comments for a complaint or campaign */
+export async function getComments(targetType: "complaint" | "campaign", targetId: string) {
+  try {
+    await connectDB();
+    const comments = await Comment.find({
+      targetType,
+      targetId: new mongoose.Types.ObjectId(targetId),
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return {
+      success: true,
+      data: comments.map((c: any) => ({
+        _id: c._id.toString(),
+        userId: c.userId.toString(),
+        userName: c.userName,
+        content: c.content,
+        createdAt: c.createdAt?.toISOString?.() || c.createdAt,
+      })),
+    };
+  } catch (error) {
+    console.error("Get comments error:", error);
+    return { success: false, error: "Failed to fetch comments" };
+  }
+}
+
+// ============ FEEDBACK ============
+
+/** Submit feedback on a resolved complaint (creator only) */
+export async function submitFeedback(data: {
+  complaintId: string;
+  rating: number;
+  comment: string;
+}) {
+  try {
+    await connectDB();
+    const session = await auth();
+    if (!session?.user) return { success: false, error: "Login required" };
+
+    const complaint = await Complaint.findById(data.complaintId);
+    if (!complaint) return { success: false, error: "Complaint not found" };
+
+    if (complaint.createdBy?.toString() !== session.user.id)
+      return { success: false, error: "Only the complaint creator can give feedback" };
+    if (complaint.status !== "Resolved")
+      return { success: false, error: "Feedback can only be given on resolved complaints" };
+    if (complaint.feedback?.rating)
+      return { success: false, error: "Feedback already submitted" };
+    if (data.rating < 1 || data.rating > 5)
+      return { success: false, error: "Rating must be between 1 and 5" };
+
+    complaint.feedback = {
+      rating: data.rating,
+      comment: data.comment.trim(),
+      createdAt: new Date(),
+    };
+    await complaint.save();
+
+    revalidatePath(`/complaints/${data.complaintId}`);
+    return { success: true, message: "Feedback submitted" };
+  } catch (error) {
+    console.error("Submit feedback error:", error);
+    return { success: false, error: "Failed to submit feedback" };
+  }
+}
+
+// ============ DELETE COMMENT ============
+
+/** Delete a comment (own comment or admin) */
+export async function deleteComment(commentId: string) {
+  try {
+    await connectDB();
+    const session = await auth();
+    if (!session?.user) return { success: false, error: "Login required" };
+
+    const comment = await Comment.findById(commentId);
+    if (!comment) return { success: false, error: "Comment not found" };
+
+    const userRole = (session.user as { role: string }).role;
+    const isAdmin = userRole === "admin";
+    const isOwner = comment.userId.toString() === session.user.id;
+
+    if (!isAdmin && !isOwner) {
+      return { success: false, error: "You can only delete your own comments" };
+    }
+
+    await Comment.findByIdAndDelete(commentId);
+    return { success: true, message: "Comment deleted" };
+  } catch (error) {
+    console.error("Delete comment error:", error);
+    return { success: false, error: "Failed to delete comment" };
+  }
+}
+
+// ============ TIMELINE MANAGEMENT (Admin) ============
+
+/** Edit a timeline entry (admin only) */
+export async function editTimelineEntry(data: {
+  complaintId: string;
+  timelineId: string;
+  comment?: string;
+  status?: string;
+}) {
+  try {
+    await connectDB();
+    const session = await auth();
+    if (!session?.user || (session.user as { role: string }).role !== "admin")
+      return { success: false, error: "Admin required" };
+
+    const complaint = await Complaint.findById(data.complaintId);
+    if (!complaint) return { success: false, error: "Complaint not found" };
+
+    const entry = complaint.timeline.id(data.timelineId);
+    if (!entry) return { success: false, error: "Timeline entry not found" };
+
+    if (data.comment) entry.comment = data.comment;
+    if (data.status) entry.status = data.status as any;
+    await complaint.save();
+
+    revalidatePath(`/complaints/${data.complaintId}`);
+    return { success: true, message: "Timeline entry updated" };
+  } catch (error) {
+    console.error("Edit timeline error:", error);
+    return { success: false, error: "Failed" };
+  }
+}
+
+/** Delete a timeline entry (admin only) */
+export async function deleteTimelineEntry(data: {
+  complaintId: string;
+  timelineId: string;
+}) {
+  try {
+    await connectDB();
+    const session = await auth();
+    if (!session?.user || (session.user as { role: string }).role !== "admin")
+      return { success: false, error: "Admin required" };
+
+    await Complaint.findByIdAndUpdate(data.complaintId, {
+      $pull: { timeline: { _id: data.timelineId } },
+    });
+
+    revalidatePath(`/complaints/${data.complaintId}`);
+    return { success: true, message: "Timeline entry deleted" };
+  } catch (error) {
+    console.error("Delete timeline error:", error);
+    return { success: false, error: "Failed" };
+  }
+}
+
+// ============ DASHBOARD COMMENTS ============
+
+/** Get all comments for dashboard (admin sees all, ngo/authority sees theirs) */
+export async function getAllCommentsForDashboard() {
+  try {
+    await connectDB();
+    const session = await auth();
+    if (!session?.user) return { success: false, error: "Auth required" };
+    const role = (session.user as { role: string }).role;
+    if (!["admin", "ngo", "authority"].includes(role))
+      return { success: false, error: "Insufficient permissions" };
+
+    const comments = await Comment.find()
+      .sort({ createdAt: -1 })
+      .limit(200)
+      .lean();
+
+    return {
+      success: true,
+      data: comments.map((c: any) => ({
+        _id: c._id.toString(),
+        targetType: c.targetType,
+        targetId: c.targetId.toString(),
+        userId: c.userId.toString(),
+        userName: c.userName,
+        content: c.content,
+        createdAt: c.createdAt?.toISOString?.() || c.createdAt,
+      })),
+    };
+  } catch (error) {
+    console.error("Get all comments error:", error);
+    return { success: false, error: "Failed" };
+  }
+}
+
+/** Get all feedback for dashboard */
+export async function getAllFeedbackForDashboard() {
+  try {
+    await connectDB();
+    const session = await auth();
+    if (!session?.user) return { success: false, error: "Auth required" };
+    const role = (session.user as { role: string }).role;
+    if (!["admin", "ngo", "authority"].includes(role))
+      return { success: false, error: "Insufficient permissions" };
+
+    const complaints = await Complaint.find({ "feedback.rating": { $exists: true, $ne: null } })
+      .select("issueId title feedback status")
+      .sort({ "feedback.createdAt": -1 })
+      .limit(100)
+      .lean();
+
+    return {
+      success: true,
+      data: complaints.map((c: any) => ({
+        _id: c._id.toString(),
+        issueId: c.issueId,
+        title: c.title,
+        status: c.status,
+        feedback: {
+          rating: c.feedback.rating,
+          comment: c.feedback.comment,
+          createdAt: c.feedback.createdAt?.toISOString?.() || c.feedback.createdAt,
+        },
+      })),
+    };
+  } catch (error) {
+    console.error("Get all feedback error:", error);
     return { success: false, error: "Failed" };
   }
 }

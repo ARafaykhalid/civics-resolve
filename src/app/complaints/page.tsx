@@ -79,7 +79,11 @@ async function ComplaintGrid({
     <>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {complaints.map((complaint: Record<string, unknown>) => (
-          <ComplaintCard key={complaint._id as string} complaint={complaint as never} />
+          <ComplaintCard
+            key={complaint._id as string}
+            complaint={complaint as never}
+            variant={complaint.status === "Pending" ? "pending" : "default"}
+          />
         ))}
       </div>
 

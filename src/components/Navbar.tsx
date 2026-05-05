@@ -36,8 +36,6 @@ export default function Navbar() {
     { href: "/events", label: "Events", icon: CalendarDays },
   ];
 
-  if (pathname?.startsWith("/dashboard")) return null;
-
   return (
     <nav className="sticky top-0 z-50 border-b border-white/10 bg-slate-900/80 backdrop-blur-xl">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

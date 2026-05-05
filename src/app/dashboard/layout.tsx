@@ -14,8 +14,8 @@ import {
   CalendarDays,
   Shield,
   ClipboardCheck,
-  Settings,
   ChevronLeft,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +32,7 @@ const adminLinks = [
   { href: "/dashboard/announcements", label: "Announcements", icon: Megaphone },
   { href: "/dashboard/volunteers", label: "Volunteers", icon: HandHelping },
   { href: "/dashboard/events", label: "Events", icon: CalendarDays },
+  { href: "/dashboard/comments", label: "Comments", icon: MessageSquare },
 ];
 
 const authorityLinks = [
@@ -41,6 +42,9 @@ const authorityLinks = [
     label: "Assigned Issues",
     icon: ClipboardCheck,
   },
+  { href: "/dashboard/volunteers", label: "Volunteers", icon: HandHelping },
+  { href: "/dashboard/events", label: "Events", icon: CalendarDays },
+  { href: "/dashboard/comments", label: "Comments", icon: MessageSquare },
 ];
 
 const userLinks = [
@@ -77,7 +81,7 @@ export default function DashboardLayout({
   return (
     <div className="flex h-full min-h-[calc(100vh-4rem)]">
       {/* Sidebar */}
-      <aside className="hidden min-h-dvh md:flex w-64 shrink-0 flex-col border-r border-white/5 bg-slate-900/50">
+      <aside className="hidden min-h-[90vh] md:flex w-64 shrink-0 flex-col border-r border-white/5 bg-slate-900/50">
         <div className="p-4 border-b border-white/5">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600">
@@ -94,7 +98,7 @@ export default function DashboardLayout({
           </div>
         </div>
 
-        <nav className="flex-1 p-3 space-y-0.5">
+        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
           {links.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
@@ -126,8 +130,8 @@ export default function DashboardLayout({
 
       {/* Mobile nav */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-white/5 bg-slate-900/95 backdrop-blur-xl">
-        <div className="flex overflow-x-auto">
-          {links.slice(0, 5).map((link) => {
+        <div className="flex overflow-x-auto scrollbar-hide">
+          {links.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
             return (
@@ -147,7 +151,9 @@ export default function DashboardLayout({
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 min-w-0 w-full overflow-y-auto pb-20 md:pb-0">{children}</main>
+      <main className="flex-1 min-w-0 w-full overflow-y-auto pb-20 md:pb-0">
+        {children}
+      </main>
     </div>
   );
 }

@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { HandHelping, MapPin, Calendar, Users, Loader2 } from "lucide-react";
+import { HandHelping, MapPin, Calendar, Users, Loader2, ExternalLink } from "lucide-react";
 import { joinVolunteer } from "@/actions/community";
 import { formatDate } from "@/lib/utils";
 import AuthModal from "@/components/AuthModal";
+import Link from "next/link";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function VolunteerListClient({ opportunities }: { opportunities: any[] }) {
@@ -70,11 +71,18 @@ export default function VolunteerListClient({ opportunities }: { opportunities: 
           );
 
           return (
-            <div key={v._id} className="glass-card p-6 transition-all duration-300 hover:border-indigo-500/30 hover:-translate-y-1">
+            <div key={v._id} className="glass-card overflow-hidden transition-all duration-300 hover:border-indigo-500/30 hover:-translate-y-1">
+              {v.images && v.images.length > 0 && (
+                <div className="h-36 overflow-hidden">
+                  <img src={v.images[0]} alt={v.title} className="h-full w-full object-cover" />
+                </div>
+              )}
+              <div className="p-6">
               <div className="flex items-center gap-2 mb-3">
                 <span className="rounded-full bg-teal-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-teal-400 border border-teal-500/20">{v.category}</span>
                 {spotsLeft <= 3 && spotsLeft > 0 && <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-amber-400">{spotsLeft} spots left!</span>}
                 {isFull && <span className="rounded-full bg-red-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-red-400">Full</span>}
+                {!v.isActive && <span className="rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-medium text-slate-400">Past</span>}
               </div>
               <h3 className="text-lg font-semibold text-white">{v.title}</h3>
               <p className="mt-2 text-sm text-slate-400 line-clamp-3">{v.description}</p>
@@ -89,12 +97,16 @@ export default function VolunteerListClient({ opportunities }: { opportunities: 
               
               <button 
                 onClick={() => handleJoinClick(v)} 
-                disabled={isFull || hasJoined || loadingId === v._id}
+                disabled={isFull || hasJoined || loadingId === v._id || !v.isActive}
                 className="btn-primary w-full mt-4 text-sm py-2.5 flex items-center justify-center gap-2"
               >
                 {loadingId === v._id ? <Loader2 className="h-4 w-4 animate-spin" /> : <HandHelping className="h-4 w-4" />}
-                {hasJoined ? "You've Joined" : isFull ? "Full" : "Volunteer Now"}
+                {hasJoined ? "You've Joined" : isFull ? "Full" : !v.isActive ? "Closed" : "Volunteer Now"}
               </button>
+              <Link href={`/volunteer/${v._id}`} className="w-full mt-2 text-xs text-center py-2 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-white/5 transition-colors flex items-center justify-center gap-1">
+                <ExternalLink className="h-3 w-3" /> View Details
+              </Link>
+              </div>
             </div>
           );
         })}

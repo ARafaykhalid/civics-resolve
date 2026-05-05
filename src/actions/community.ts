@@ -59,7 +59,7 @@ export async function getAnnouncements(activeOnly = true) {
     const announcements = await Announcement.find(query)
       .sort({ isPinned: -1, createdAt: -1 })
       .lean();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     return {
       success: true,
       data: announcements.map((a: any) => ({
@@ -153,7 +153,7 @@ export async function getVolunteerOpportunities(activeOnly = true) {
       ? { isActive: true, date: { $gte: new Date() } }
       : {};
     const volunteers = await Volunteer.find(query).sort({ date: 1 }).lean();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     return {
       success: true,
       data: volunteers.map((v: any) => ({
@@ -161,8 +161,11 @@ export async function getVolunteerOpportunities(activeOnly = true) {
         _id: v._id.toString(),
         createdBy: v.createdBy?.toString(),
         volunteers:
-          v.volunteers?.map((id: mongoose.Types.ObjectId) => id.toString()) ||
-          [],
+          v.volunteers?.map((vol: any) => ({
+            userId: vol.userId?.toString(),
+            responses: vol.responses,
+            joinedAt: vol.joinedAt?.toISOString?.() || vol.joinedAt,
+          })) || [],
         date: v.date?.toISOString?.() || v.date,
         createdAt: v.createdAt?.toISOString?.() || v.createdAt,
         updatedAt: v.updatedAt?.toISOString?.() || v.updatedAt,
@@ -205,6 +208,73 @@ export async function joinVolunteer(
   } catch (error) {
     console.error("Join volunteer error:", error);
     return { success: false, error: "Failed to join" };
+  }
+}
+
+/** Update volunteer opportunity (admin/ngo) */
+export async function updateVolunteerOpportunity(
+  id: string,
+  updates: {
+    title?: string;
+    description?: string;
+    category?: string;
+    location?: string;
+    date?: string;
+    spotsTotal?: number;
+    spotsFilled?: number;
+    contactEmail?: string;
+    contactPhone?: string;
+    images?: string[];
+    isActive?: boolean;
+  },
+) {
+  try {
+    await connectDB();
+    const session = await auth();
+    if (!session?.user) return { success: false, error: "Auth required" };
+    const role = (session.user as { role: string }).role;
+    if (!["admin", "ngo"].includes(role))
+      return { success: false, error: "Insufficient permissions" };
+
+    // Convert date string to Date object if provided
+    const updateData: any = { ...updates };
+    if (updates.date) {
+      updateData.date = new Date(updates.date);
+    }
+
+    const volunteer = await Volunteer.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true },
+    );
+    if (!volunteer) return { success: false, error: "Not found" };
+
+    revalidatePath("/volunteer");
+    revalidatePath("/dashboard");
+    return { success: true, message: "Volunteer opportunity updated" };
+  } catch (error) {
+    console.error("Update volunteer error:", error);
+    return { success: false, error: "Failed" };
+  }
+}
+
+/** Delete volunteer opportunity (admin/ngo) */
+export async function deleteVolunteerOpportunity(id: string) {
+  try {
+    await connectDB();
+    const session = await auth();
+    if (!session?.user) return { success: false, error: "Auth required" };
+    const role = (session.user as { role: string }).role;
+    if (!["admin", "ngo"].includes(role))
+      return { success: false, error: "Insufficient permissions" };
+
+    await Volunteer.findByIdAndDelete(id);
+    revalidatePath("/volunteer");
+    revalidatePath("/dashboard");
+    return { success: true, message: "Deleted" };
+  } catch (error) {
+    console.error("Delete volunteer error:", error);
+    return { success: false, error: "Failed" };
   }
 }
 
@@ -262,7 +332,7 @@ export async function getEvents(activeOnly = true) {
       ? { isActive: true, date: { $gte: new Date() } }
       : {};
     const events = await Event.find(query).sort({ date: 1 }).lean();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     return {
       success: true,
       data: events.map((e: any) => ({
@@ -308,31 +378,151 @@ export async function joinEvent(eventId: string) {
   }
 }
 
-/** Update volunteer opportunity progress (admin/ngo) */
-export async function updateVolunteerOpportunity(
+/** Update event (admin/ngo/authority) */
+export async function updateEvent(
   id: string,
-  updates: { spotsTotal?: number; spotsFilled?: number },
+  updates: {
+    title?: string;
+    description?: string;
+    location?: string;
+    date?: string;
+    endDate?: string;
+    image?: string;
+    organizer?: string;
+    maxAttendees?: number;
+    isActive?: boolean;
+  },
 ) {
   try {
     await connectDB();
     const session = await auth();
     if (!session?.user) return { success: false, error: "Auth required" };
     const role = (session.user as { role: string }).role;
-    if (!["admin", "ngo"].includes(role))
+    if (!["admin", "ngo", "authority"].includes(role))
       return { success: false, error: "Insufficient permissions" };
 
-    const volunteer = await Volunteer.findByIdAndUpdate(
+    const updateData: any = { ...updates };
+    if (updates.date) updateData.date = new Date(updates.date);
+    if (updates.endDate) updateData.endDate = new Date(updates.endDate);
+
+    const event = await Event.findByIdAndUpdate(
       id,
-      { $set: updates },
+      { $set: updateData },
       { new: true },
     );
-    if (!volunteer) return { success: false, error: "Not found" };
+    if (!event) return { success: false, error: "Not found" };
+
+    revalidatePath("/events");
+    revalidatePath("/dashboard");
+    return { success: true, message: "Event updated" };
+  } catch (error) {
+    console.error("Update event error:", error);
+    return { success: false, error: "Failed" };
+  }
+}
+
+/** Delete event (admin/ngo/authority) */
+export async function deleteEvent(id: string) {
+  try {
+    await connectDB();
+    const session = await auth();
+    if (!session?.user) return { success: false, error: "Auth required" };
+    const role = (session.user as { role: string }).role;
+    if (!["admin", "ngo", "authority"].includes(role))
+      return { success: false, error: "Insufficient permissions" };
+
+    await Event.findByIdAndDelete(id);
+    revalidatePath("/events");
+    revalidatePath("/dashboard");
+    return { success: true, message: "Deleted" };
+  } catch (error) {
+    console.error("Delete event error:", error);
+    return { success: false, error: "Failed" };
+  }
+}
+
+/** Leave / unenroll from a volunteer opportunity */
+export async function leaveVolunteer(opportunityId: string) {
+  try {
+    await connectDB();
+    const session = await auth();
+    if (!session?.user) return { success: false, error: "Login required" };
+
+    const opportunity = await Volunteer.findById(opportunityId);
+    if (!opportunity) return { success: false, error: "Not found" };
+
+    const userId = new mongoose.Types.ObjectId(session.user.id);
+    const idx = opportunity.volunteers.findIndex(
+      (v: any) => v.userId?.equals(userId),
+    );
+    if (idx === -1) return { success: false, error: "You haven't joined this opportunity" };
+
+    opportunity.volunteers.splice(idx, 1);
+    opportunity.spotsFilled = Math.max(0, opportunity.spotsFilled - 1);
+    await opportunity.save();
 
     revalidatePath("/volunteer");
-    revalidatePath("/dashboard");
-    return { success: true, message: "Volunteer opportunity updated" };
+    return { success: true, message: "Successfully unenrolled" };
   } catch (error) {
-    console.error("Update volunteer error:", error);
+    console.error("Leave volunteer error:", error);
+    return { success: false, error: "Failed to unenroll" };
+  }
+}
+
+/** Get a single event by ID */
+export async function getEventById(id: string) {
+  try {
+    await connectDB();
+    const event = await Event.findById(id).lean();
+    if (!event) return { success: false, error: "Not found" };
+
+    const e = event as any;
+    return {
+      success: true,
+      data: {
+        ...e,
+        _id: e._id.toString(),
+        createdBy: e.createdBy?.toString(),
+        attendees: e.attendees?.map((a: any) => a.toString()) || [],
+        date: e.date?.toISOString?.() || e.date,
+        endDate: e.endDate?.toISOString?.() || e.endDate,
+        createdAt: e.createdAt?.toISOString?.() || e.createdAt,
+        updatedAt: e.updatedAt?.toISOString?.() || e.updatedAt,
+      },
+    };
+  } catch (error) {
+    console.error("Get event error:", error);
+    return { success: false, error: "Failed" };
+  }
+}
+
+/** Get a single volunteer opportunity by ID */
+export async function getVolunteerById(id: string) {
+  try {
+    await connectDB();
+    const vol = await Volunteer.findById(id).lean();
+    if (!vol) return { success: false, error: "Not found" };
+
+    const v = vol as any;
+    return {
+      success: true,
+      data: {
+        ...v,
+        _id: v._id.toString(),
+        createdBy: v.createdBy?.toString(),
+        volunteers:
+          v.volunteers?.map((vol: any) => ({
+            userId: vol.userId?.toString(),
+            responses: vol.responses,
+            joinedAt: vol.joinedAt?.toISOString?.() || vol.joinedAt,
+          })) || [],
+        date: v.date?.toISOString?.() || v.date,
+        createdAt: v.createdAt?.toISOString?.() || v.createdAt,
+        updatedAt: v.updatedAt?.toISOString?.() || v.updatedAt,
+      },
+    };
+  } catch (error) {
+    console.error("Get volunteer error:", error);
     return { success: false, error: "Failed" };
   }
 }

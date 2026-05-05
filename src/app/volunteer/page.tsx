@@ -2,7 +2,7 @@ import { getVolunteerOpportunities } from "@/actions/community";
 import VolunteerListClient from "./VolunteerListClient";
 
 export default async function VolunteerPage() {
-  const result = await getVolunteerOpportunities();
+  const result = await getVolunteerOpportunities(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const opportunities = (result.success ? result.data || [] : []) as any[];
 

@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IComplaintDoc extends Document {
+  issueId: number;
   title: string;
   description: string;
   category: string;
@@ -25,6 +26,11 @@ export interface IComplaintDoc extends Document {
     images?: string[];
     createdAt: Date;
   }[];
+  feedback?: {
+    rating: number;
+    comment: string;
+    createdAt: Date;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -43,6 +49,7 @@ const TimelineSchema = new Schema(
 
 const ComplaintSchema = new Schema<IComplaintDoc>(
   {
+    issueId: { type: Number, unique: true },
     title: { type: String, required: true, trim: true },
     description: { type: String, required: true },
     category: {
@@ -72,10 +79,29 @@ const ComplaintSchema = new Schema<IComplaintDoc>(
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
     isAnonymous: { type: Boolean, default: false },
     timeline: [TimelineSchema],
+    feedback: {
+      rating: { type: Number, min: 1, max: 5 },
+      comment: { type: String },
+      createdAt: { type: Date },
+    },
   },
   { timestamps: true }
 );
 
+// Auto-increment issueId
+ComplaintSchema.pre("save", async function (next) {
+  if (this.isNew && !this.issueId) {
+    const last = await mongoose
+      .model("Complaint")
+      .findOne({}, { issueId: 1 })
+      .sort({ issueId: -1 })
+      .lean();
+    this.issueId = ((last as any)?.issueId || 0) + 1;
+  }
+  next();
+});
+
+ComplaintSchema.index({ issueId: 1 }, { unique: true, sparse: true });
 ComplaintSchema.index({ status: 1 });
 ComplaintSchema.index({ category: 1 });
 ComplaintSchema.index({ createdAt: -1 });

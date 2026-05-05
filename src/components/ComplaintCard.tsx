@@ -6,11 +6,12 @@ import { cn, getStatusColor, getPriorityColor, formatDate, truncate } from "@/li
 
 interface ComplaintCardProps {
   complaint: {
-    _id: string; title: string; description: string; category: string;
+    _id: string; issueId?: number; title: string; description: string; category: string;
     location: { address: string }; images: string[]; status: string;
     priority: string; upvotes: number; isAnonymous: boolean;
     createdBy?: { name: string } | null; createdAt: string;
   };
+  variant?: "default" | "pending";
 }
 
 const categoryIcons: Record<string, typeof Route> = {
@@ -23,21 +24,40 @@ const categoryGradients: Record<string, string> = {
   Safety: "from-red-500 to-rose-600", Other: "from-slate-400 to-slate-600",
 };
 
-export default function ComplaintCard({ complaint }: ComplaintCardProps) {
+export default function ComplaintCard({ complaint, variant = "default" }: ComplaintCardProps) {
   const CategoryIcon = categoryIcons[complaint.category] || CircleHelp;
   const gradient = categoryGradients[complaint.category] || categoryGradients.Other;
+  const slug = complaint.issueId ? complaint.issueId.toString() : complaint._id;
+  const isPending = variant === "pending" || complaint.status === "Pending";
 
   return (
-    <Link href={`/complaints/${complaint._id}`} className="group block">
-      <div className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-slate-900/50 backdrop-blur-sm transition-all duration-300 hover:border-indigo-500/30 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1">
+    <Link href={`/complaints/${slug}`} className="group block">
+      <div className={cn(
+        "relative overflow-hidden rounded-2xl border backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:-translate-y-1",
+        variant === "pending"
+          ? "border-red-500/20 bg-red-950/30 hover:border-red-500/40 hover:shadow-red-500/10"
+          : "border-white/[0.06] bg-slate-900/50 hover:border-indigo-500/30 hover:shadow-indigo-500/10"
+      )}>
+        {/* Pending/Draft badge */}
+        {variant === "pending" && (
+          <div className="absolute top-3 right-3 z-10 rounded-full bg-red-500/90 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-lg">
+            PENDING REVIEW
+          </div>
+        )}
+
         {complaint.images.length > 0 ? (
           <div className="relative h-48 overflow-hidden">
             <img src={complaint.images[0]} alt={complaint.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent" />
-            <div className="absolute bottom-3 left-3">
+            <div className="absolute bottom-3 left-3 flex items-center gap-2">
               <span className={cn("inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r px-3 py-1 text-xs font-semibold text-white shadow-lg", gradient)}>
                 <CategoryIcon className="h-3.5 w-3.5" />{complaint.category}
               </span>
+              {complaint.issueId && (
+                <span className="rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-mono text-slate-300">
+                  #{complaint.issueId}
+                </span>
+              )}
             </div>
           </div>
         ) : (
@@ -50,6 +70,11 @@ export default function ComplaintCard({ complaint }: ComplaintCardProps) {
           <div className="flex items-center gap-2 mb-3">
             <span className={cn("rounded-full border px-2.5 py-0.5 text-[11px] font-semibold", getStatusColor(complaint.status))}>{complaint.status}</span>
             <span className={cn("rounded-full border px-2.5 py-0.5 text-[11px] font-semibold", getPriorityColor(complaint.priority))}>{complaint.priority}</span>
+            {complaint.issueId && !complaint.images.length && (
+              <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-mono text-slate-400">
+                #{complaint.issueId}
+              </span>
+            )}
           </div>
           <h3 className="text-lg font-semibold text-white line-clamp-2 group-hover:text-indigo-400 transition-colors">{complaint.title}</h3>
           <p className="mt-2 text-sm text-slate-400 line-clamp-2">{truncate(complaint.description, 120)}</p>

@@ -1,25 +1,22 @@
 import { notFound } from "next/navigation";
-import { getDonationCampaignById } from "@/actions/donations";
+import { getVolunteerById } from "@/actions/community";
 import { getComments } from "@/actions/complaints";
-import DonateDetailClient from "./DonateDetailClient";
+import VolunteerDetailClient from "./VolunteerDetailClient";
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
-export default async function DonateDetailPage({ params }: Props) {
+export default async function VolunteerDetailPage({ params }: Props) {
   const { id } = await params;
   const [result, commentsResult] = await Promise.all([
-    getDonationCampaignById(id),
+    getVolunteerById(id),
     getComments("campaign", id),
   ]);
+
   if (!result.success || !result.data) notFound();
+
   const comments = commentsResult.success ? commentsResult.data || [] : [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (
-    <DonateDetailClient
-      campaign={result.data as any}
-      initialComments={comments as any[]}
-    />
-  );
+  return <VolunteerDetailClient opportunity={result.data as any} initialComments={comments as any[]} />;
 }

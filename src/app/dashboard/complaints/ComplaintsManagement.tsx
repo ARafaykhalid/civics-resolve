@@ -8,6 +8,7 @@ import {
 } from "@/actions/complaints";
 import ConfirmModal from "@/components/ConfirmModal";
 import Dropdown from "@/components/Dropdown";
+import ImageUpload from "@/components/ImageUpload";
 import { cn, getStatusColor, getPriorityColor, formatDate } from "@/lib/utils";
 import {
   Trash2,
@@ -20,7 +21,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
- 
 export default function ComplaintsManagement({
   complaints,
   authorities,
@@ -42,6 +42,7 @@ export default function ComplaintsManagement({
   const [selectedPriority, setSelectedPriority] = useState("Medium");
   const [newStatus, setNewStatus] = useState("");
   const [statusComment, setStatusComment] = useState("");
+  const [statusImages, setStatusImages] = useState<string[]>([]);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [actionError, setActionError] = useState("");
 
@@ -87,6 +88,7 @@ export default function ComplaintsManagement({
       complaintId: id,
       status: newStatus,
       comment: statusComment,
+      images: statusImages,
     });
     if (result.success) {
       setModal(null);
@@ -178,6 +180,7 @@ export default function ComplaintsManagement({
                   "Category",
                   "Status",
                   "Priority",
+                  "Assigned To",
                   "Date",
                   "Actions",
                 ].map((h) => (
@@ -220,6 +223,15 @@ export default function ComplaintsManagement({
                       {c.priority}
                     </span>
                   </td>
+                  <td className="px-4 py-3">
+                    {c.assignedTo ? (
+                      <span className="text-xs text-indigo-400 font-medium">
+                        {c.assignedTo.name || "Assigned"}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-slate-600">Unassigned</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-slate-500 text-xs">
                     {formatDate(c.createdAt)}
                   </td>
@@ -240,6 +252,7 @@ export default function ComplaintsManagement({
                           setModal({ type: "status", id: c._id });
                           setNewStatus("");
                           setStatusComment("");
+                          setStatusImages([]);
                           setActionError("");
                         }}
                         className="rounded-lg p-1.5 text-slate-500 hover:bg-blue-500/10 hover:text-blue-400"
@@ -281,7 +294,7 @@ export default function ComplaintsManagement({
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
           onClick={() => setModal(null)}>
           <div
-            className="w-full max-w-md glass-card p-6 m-4"
+            className="w-full max-w-lg glass-card p-6 m-4 max-h-[90vh]"
             onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold text-white mb-4">
               {modal.type === "assign" ? "Assign Authority" : "Update Status"}
@@ -345,6 +358,16 @@ export default function ComplaintsManagement({
                       onChange={(e) => setStatusComment(e.target.value)}
                       className="input-field min-h-[80px]"
                       placeholder="Note..."
+                    />
+                  </div>
+                  <div>
+                    <label className="label-text">
+                      Proof Images (optional)
+                    </label>
+                    <ImageUpload
+                      images={statusImages}
+                      onChange={setStatusImages}
+                      maxFiles={3}
                     />
                   </div>
                 </>
