@@ -108,7 +108,13 @@ export async function createComplaint(data: {
     };
   } catch (error: any) {
     if (error.name === "ZodError") {
-      return { success: false, error: (error.issues?.[0]?.message || error.errors?.[0]?.message || "Validation failed") };
+      return {
+        success: false,
+        error:
+          error.issues?.[0]?.message ||
+          error.errors?.[0]?.message ||
+          "Validation failed",
+      };
     }
     console.error("Create complaint error:", error);
     return { success: false, error: "Failed to submit complaint" };
@@ -146,13 +152,18 @@ export async function getComplaints(filters: ComplaintFilters = {}) {
       if (!userId) {
         // Guest user: cannot see Pending
         if (query.status === "Pending") {
-          return { success: true, data: { data: [], total: 0, page, limit, totalPages: 0 } };
+          return {
+            success: true,
+            data: { data: [], total: 0, page, limit, totalPages: 0 },
+          };
         } else if (!query.status) {
           query.status = { $ne: "Pending" };
         }
       } else {
         // Regular logged-in user: can see non-Pending OR their own Pending
-        const pendingCondition = { createdBy: new mongoose.Types.ObjectId(userId) };
+        const pendingCondition = {
+          createdBy: new mongoose.Types.ObjectId(userId),
+        };
         const notPendingCondition = { status: { $ne: "Pending" } };
 
         if (query.status === "Pending") {
@@ -194,7 +205,9 @@ export async function getComplaints(filters: ComplaintFilters = {}) {
         const sa = statusOrder[a.status] ?? 99;
         const sb = statusOrder[b.status] ?? 99;
         if (sa !== sb) return sa - sb;
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
       });
     }
 
@@ -219,7 +232,7 @@ export async function getComplaints(filters: ComplaintFilters = {}) {
         : null,
       upvotedBy:
         c.upvotedBy?.map((id: mongoose.Types.ObjectId) => id.toString()) || [],
-       
+
       timeline:
         c.timeline?.map((t: any) => ({
           ...t,
@@ -230,7 +243,8 @@ export async function getComplaints(filters: ComplaintFilters = {}) {
       feedback: c.feedback
         ? {
             ...c.feedback,
-            createdAt: c.feedback.createdAt?.toISOString?.() || c.feedback.createdAt,
+            createdAt:
+              c.feedback.createdAt?.toISOString?.() || c.feedback.createdAt,
           }
         : null,
       createdAt: c.createdAt?.toISOString?.() || c.createdAt,
@@ -272,7 +286,9 @@ export async function getComplaintById(id: string) {
           .populate("createdBy", "name email")
           .populate("assignedTo", "name email organization role")
           .lean();
-      } catch { /* invalid ObjectId */ }
+      } catch {
+        /* invalid ObjectId */
+      }
     }
     if (!complaint) return { success: false, error: "Complaint not found" };
 
@@ -299,7 +315,7 @@ export async function getComplaintById(id: string) {
         : null,
       upvotedBy:
         c.upvotedBy?.map((id: mongoose.Types.ObjectId) => id.toString()) || [],
-       
+
       timeline:
         c.timeline?.map((t: any) => ({
           ...t,
@@ -310,7 +326,8 @@ export async function getComplaintById(id: string) {
       feedback: c.feedback
         ? {
             ...c.feedback,
-            createdAt: c.feedback.createdAt?.toISOString?.() || c.feedback.createdAt,
+            createdAt:
+              c.feedback.createdAt?.toISOString?.() || c.feedback.createdAt,
           }
         : null,
       createdAt: c.createdAt?.toISOString?.() || c.createdAt,
@@ -426,7 +443,13 @@ export async function updateComplaintStatus(data: {
     return { success: true, message: "Status updated" };
   } catch (error: any) {
     if (error.name === "ZodError") {
-      return { success: false, error: (error.issues?.[0]?.message || error.errors?.[0]?.message || "Validation failed") };
+      return {
+        success: false,
+        error:
+          error.issues?.[0]?.message ||
+          error.errors?.[0]?.message ||
+          "Validation failed",
+      };
     }
     console.error("Status update error:", error);
     return { success: false, error: "Failed to update status" };
@@ -482,7 +505,13 @@ export async function assignComplaint(data: {
     return { success: true, message: "Assigned" };
   } catch (error: any) {
     if (error.name === "ZodError") {
-      return { success: false, error: (error.issues?.[0]?.message || error.errors?.[0]?.message || "Validation failed") };
+      return {
+        success: false,
+        error:
+          error.issues?.[0]?.message ||
+          error.errors?.[0]?.message ||
+          "Validation failed",
+      };
     }
     console.error("Assignment error:", error);
     return { success: false, error: "Failed to assign" };
@@ -537,7 +566,8 @@ export async function editComplaint(data: {
     if (!isAdmin && !["Pending", "Verified"].includes(complaint.status)) {
       return {
         success: false,
-        error: "Cannot edit a complaint that is already In Progress or Resolved",
+        error:
+          "Cannot edit a complaint that is already In Progress or Resolved",
       };
     }
 
@@ -651,7 +681,7 @@ export async function getAllUsers() {
       return { success: false, error: "Admin required" };
 
     const users = await User.find().select("-password").lean();
-     
+
     return {
       success: true,
       data: users.map((u: any) => ({
@@ -678,7 +708,9 @@ export async function updateUserRole(userId: string, role: string) {
 
     // If demoting away from authority/ngo, remove Authority record
     if (!["authority", "ngo"].includes(role)) {
-      await Authority.deleteMany({ userId: new mongoose.Types.ObjectId(userId) });
+      await Authority.deleteMany({
+        userId: new mongoose.Types.ObjectId(userId),
+      });
     }
 
     revalidatePath("/dashboard");
@@ -727,11 +759,10 @@ export async function updateUserRoleWithDetails(data: {
         userId: user._id,
       };
 
-      await Authority.findOneAndUpdate(
-        { userId: user._id },
-        authorityData,
-        { upsert: true, new: true }
-      );
+      await Authority.findOneAndUpdate({ userId: user._id }, authorityData, {
+        upsert: true,
+        new: true,
+      });
     } else {
       // If demoting, remove Authority record
       await Authority.deleteMany({ userId: user._id });
@@ -790,9 +821,10 @@ export async function addComment(data: {
       content: data.content.trim(),
     });
 
-    const path = data.targetType === "complaint"
-      ? `/complaints/${data.targetId}`
-      : `/donate/${data.targetId}`;
+    const path =
+      data.targetType === "complaint"
+        ? `/complaints/${data.targetId}`
+        : `/donate/${data.targetId}`;
     revalidatePath(path);
 
     return {
@@ -811,7 +843,10 @@ export async function addComment(data: {
 }
 
 /** Get comments for a complaint or campaign */
-export async function getComments(targetType: "complaint" | "campaign", targetId: string) {
+export async function getComments(
+  targetType: "complaint" | "campaign",
+  targetId: string,
+) {
   try {
     await connectDB();
     const comments = await Comment.find({
@@ -854,9 +889,15 @@ export async function submitFeedback(data: {
     if (!complaint) return { success: false, error: "Complaint not found" };
 
     if (complaint.createdBy?.toString() !== session.user.id)
-      return { success: false, error: "Only the complaint creator can give feedback" };
+      return {
+        success: false,
+        error: "Only the complaint creator can give feedback",
+      };
     if (complaint.status !== "Resolved")
-      return { success: false, error: "Feedback can only be given on resolved complaints" };
+      return {
+        success: false,
+        error: "Feedback can only be given on resolved complaints",
+      };
     if (complaint.feedback?.rating)
       return { success: false, error: "Feedback already submitted" };
     if (data.rating < 1 || data.rating > 5)
@@ -923,7 +964,8 @@ export async function editTimelineEntry(data: {
     const complaint = await Complaint.findById(data.complaintId);
     if (!complaint) return { success: false, error: "Complaint not found" };
 
-    const entry = complaint.timeline.id(data.timelineId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const entry = (complaint.timeline as any).id(data.timelineId);
     if (!entry) return { success: false, error: "Timeline entry not found" };
 
     if (data.comment) entry.comment = data.comment;
@@ -1006,7 +1048,9 @@ export async function getAllFeedbackForDashboard() {
     if (!["admin", "ngo", "authority"].includes(role))
       return { success: false, error: "Insufficient permissions" };
 
-    const complaints = await Complaint.find({ "feedback.rating": { $exists: true, $ne: null } })
+    const complaints = await Complaint.find({
+      "feedback.rating": { $exists: true, $ne: null },
+    })
       .select("issueId title feedback status")
       .sort({ "feedback.createdAt": -1 })
       .limit(100)
@@ -1022,7 +1066,8 @@ export async function getAllFeedbackForDashboard() {
         feedback: {
           rating: c.feedback.rating,
           comment: c.feedback.comment,
-          createdAt: c.feedback.createdAt?.toISOString?.() || c.feedback.createdAt,
+          createdAt:
+            c.feedback.createdAt?.toISOString?.() || c.feedback.createdAt,
         },
       })),
     };

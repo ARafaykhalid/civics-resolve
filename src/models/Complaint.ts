@@ -89,7 +89,7 @@ const ComplaintSchema = new Schema<IComplaintDoc>(
 );
 
 // Auto-increment issueId
-ComplaintSchema.pre("save", async function (next) {
+ComplaintSchema.pre("save", async function () {
   if (this.isNew && !this.issueId) {
     const last = await mongoose
       .model("Complaint")
@@ -98,7 +98,6 @@ ComplaintSchema.pre("save", async function (next) {
       .lean();
     this.issueId = ((last as any)?.issueId || 0) + 1;
   }
-  next();
 });
 
 ComplaintSchema.index({ issueId: 1 }, { unique: true, sparse: true });
