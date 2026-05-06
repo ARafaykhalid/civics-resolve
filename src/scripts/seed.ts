@@ -42,11 +42,11 @@ async function seed() {
   const complaints = [
     {
       title: "Large Pothole on Main Street", description: "There is a large pothole on Main Street near Oak Avenue. It has been growing for two weeks and poses a serious risk to vehicles. The pothole is approximately 2 feet wide and 6 inches deep.",
-      category: "Road", location: { address: "123 Main Street, Downtown", lat: 28.6139, lng: 77.209 }, images: [], status: "In Progress", priority: "High", upvotes: 24, upvotedBy: [], assignedTo: uid[3], createdBy: uid[1], isAnonymous: false,
+      category: "Road", location: { address: "123 Main Street, Downtown", lat: 28.6139, lng: 77.209 }, images: [], status: "Under Progress", priority: "High", upvotes: 24, upvotedBy: [], assignedTo: uid[3], createdBy: uid[1], isAnonymous: false,
       timeline: [
         { status: "Pending", comment: "Complaint submitted", updatedBy: uid[1], updatedByName: "John Citizen", createdAt: new Date(Date.now() - 86400000 * 5) },
         { status: "Verified", comment: "Issue verified by field inspector", updatedBy: uid[0], updatedByName: "Admin User", createdAt: new Date(Date.now() - 86400000 * 3) },
-        { status: "In Progress", comment: "Road repair crew dispatched", updatedBy: uid[3], updatedByName: "Road Authority", createdAt: new Date(Date.now() - 86400000) },
+        { status: "Under Progress", comment: "Road repair crew dispatched", updatedBy: uid[3], updatedByName: "Road Authority", createdAt: new Date(Date.now() - 86400000) },
       ],
     },
     {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { useState, useCallback } from "react";
 import Dropdown from "@/components/Dropdown";
@@ -12,7 +13,7 @@ interface FilterBarProps {
   currentSearch?: string;
 }
 
-const statuses = ["Pending", "Verified", "In Progress", "Resolved"];
+const statuses = ["Pending Verification", "Verified", "Under Progress", "Resolved", "Rejected"];
 const categories = ["Road", "Water", "Electricity", "Garbage", "Safety", "Other"];
 const sortOptions = [
   { value: "latest", label: "Latest" },
@@ -23,7 +24,12 @@ const sortOptions = [
 export default function FilterBar({ currentStatus, currentCategory, currentSort, currentSearch }: FilterBarProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
   const [search, setSearch] = useState(currentSearch || "");
+  const role = (session?.user as { role?: string })?.role;
+  const availableStatuses = role === "admin" || role === "ngo" || role === "authority"
+    ? statuses
+    : ["Verified", "Under Progress", "Resolved"];
 
   const updateFilter = useCallback((key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -63,7 +69,7 @@ export default function FilterBar({ currentStatus, currentCategory, currentSort,
           <Dropdown
             value={currentStatus || ""}
             onChange={(val) => updateFilter("status", val)}
-            options={statuses.map(s => ({ label: s, value: s }))}
+            options={availableStatuses.map(s => ({ label: s, value: s }))}
             placeholder="All Status"
             className="text-sm"
           />

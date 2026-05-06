@@ -80,7 +80,7 @@ export default function AssignedIssues({ complaints }: { complaints: any[] }) {
                   options={[
                     { label: "Select...", value: "" },
                     { label: "Verified", value: "Verified" },
-                    { label: "In Progress", value: "In Progress" },
+                    { label: "Under Progress", value: "Under Progress" },
                     { label: "Resolved", value: "Resolved" },
                   ]}
                 />

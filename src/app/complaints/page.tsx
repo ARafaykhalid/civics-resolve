@@ -82,7 +82,7 @@ async function ComplaintGrid({
           <ComplaintCard
             key={complaint._id as string}
             complaint={complaint as never}
-            variant={complaint.status === "Pending" ? "pending" : "default"}
+            variant={complaint.status === "Pending Verification" ? "pending" : "default"}
           />
         ))}
       </div>

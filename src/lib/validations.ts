@@ -40,7 +40,7 @@ export type LoginInput = z.infer<typeof loginSchema>;
 /** Status update schema */
 export const statusUpdateSchema = z.object({
   complaintId: z.string().min(1),
-  status: z.enum(["Pending", "Verified", "In Progress", "Resolved"]),
+  status: z.enum(["Pending Verification", "Verified", "Under Progress", "Resolved", "Rejected"]),
   comment: z.string().min(5, "Comment must be at least 5 characters").max(500),
   images: z.array(z.string()).max(3).default([]),
 });

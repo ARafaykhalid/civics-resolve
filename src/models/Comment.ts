@@ -4,7 +4,7 @@ import mongoose, { Schema, Document, Model } from "mongoose";
  * Comment — user comments on complaints or donation campaigns.
  */
 export interface ICommentDoc extends Document {
-  targetType: "complaint" | "campaign";
+  targetType: "complaint" | "campaign" | "event" | "volunteer";
   targetId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   userName: string;
@@ -17,7 +17,7 @@ const CommentSchema = new Schema<ICommentDoc>(
   {
     targetType: {
       type: String,
-      enum: ["complaint", "campaign"],
+      enum: ["complaint", "campaign", "event", "volunteer"],
       required: true,
     },
     targetId: { type: Schema.Types.ObjectId, required: true, index: true },

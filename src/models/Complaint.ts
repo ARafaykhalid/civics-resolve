@@ -11,7 +11,7 @@ export interface IComplaintDoc extends Document {
     lng?: number;
   };
   images: string[];
-  status: "Pending" | "Verified" | "In Progress" | "Resolved";
+  status: "Pending Verification" | "Verified" | "Under Progress" | "Resolved" | "Rejected";
   priority: "Low" | "Medium" | "High";
   upvotes: number;
   upvotedBy: mongoose.Types.ObjectId[];
@@ -65,8 +65,8 @@ const ComplaintSchema = new Schema<IComplaintDoc>(
     images: [{ type: String }],
     status: {
       type: String,
-      enum: ["Pending", "Verified", "In Progress", "Resolved"],
-      default: "Pending",
+      enum: ["Pending Verification", "Verified", "Under Progress", "Resolved", "Rejected"],
+      default: "Pending Verification",
     },
     priority: {
       type: String,
@@ -90,14 +90,17 @@ const ComplaintSchema = new Schema<IComplaintDoc>(
 
 // Auto-increment issueId
 ComplaintSchema.pre("save", async function () {
-  if (this.isNew && !this.issueId) {
-    const last = await mongoose
-      .model("Complaint")
-      .findOne({}, { issueId: 1 })
-      .sort({ issueId: -1 })
-      .lean();
-    this.issueId = ((last as any)?.issueId || 0) + 1;
+  if (!this.isNew || this.issueId) {
+    return;
   }
+
+  const last = await mongoose
+    .model("Complaint")
+    .findOne({}, { issueId: 1 })
+    .sort({ issueId: -1 })
+    .lean();
+
+  this.issueId = ((last as any)?.issueId || 0) + 1;
 });
 
 ComplaintSchema.index({ issueId: 1 }, { unique: true, sparse: true });

@@ -70,7 +70,7 @@ export default function MyComplaintsClient({ complaints }: { complaints: any[] }
     }
   };
 
-  const canEdit = (c: any) => ["Pending", "Verified"].includes(c.status);
+  const canEdit = (c: any) => ["Pending Verification", "Verified"].includes(c.status);
 
   return (
     <div className="p-6 lg:p-8 animate-fade-in">

@@ -2,7 +2,7 @@
 
 export type UserRole = "user" | "admin" | "ngo" | "authority";
 
-export type ComplaintStatus = "Pending" | "Verified" | "In Progress" | "Resolved";
+export type ComplaintStatus = "Pending Verification" | "Verified" | "Under Progress" | "Resolved" | "Rejected";
 export type ComplaintPriority = "Low" | "Medium" | "High";
 export type ComplaintCategory = "Road" | "Water" | "Electricity" | "Garbage" | "Safety" | "Other";
 

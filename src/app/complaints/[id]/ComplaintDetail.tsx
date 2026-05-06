@@ -7,10 +7,9 @@ import {
   addComment,
   deleteComment,
   submitFeedback,
-  editTimelineEntry,
-  deleteTimelineEntry,
 } from "@/actions/complaints";
 import StatusTimeline from "@/components/StatusTimeline";
+import ShareModal from "@/components/ShareModal";
 import {
   ThumbsUp,
   MapPin,
@@ -25,8 +24,6 @@ import {
   Send,
   Star,
   Trash2,
-  Pencil,
-  Hash,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -57,6 +54,7 @@ export default function ComplaintDetail({
   const [voting, setVoting] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [authModal, setAuthModal] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // Comments state
   const [comments, setComments] = useState(initialComments || []);
@@ -74,14 +72,7 @@ export default function ComplaintDetail({
   const [feedbackError, setFeedbackError] = useState("");
 
   const isCreator = session?.user?.id === complaint.createdBy?._id;
-  const isAdmin = (session?.user as any)?.role === "admin";
   const isResolved = complaint.status === "Resolved";
-
-  // Timeline management state (admin)
-  const [timeline, setTimeline] = useState(complaint.timeline || []);
-  const [editingTimeline, setEditingTimeline] = useState<string | null>(null);
-  const [editTimelineComment, setEditTimelineComment] = useState("");
-  const [timelineLoading, setTimelineLoading] = useState(false);
 
   const handleUpvote = async () => {
     if (!session?.user) {
@@ -111,7 +102,7 @@ export default function ComplaintDetail({
       content: commentText,
     });
     if (result.success && result.data) {
-      setComments((prev) => [{ ...result.data, userId: session?.user?.id }, ...prev]);
+      setComments((prev) => [result.data, ...prev]);
       setCommentText("");
     }
     setCommentLoading(false);
@@ -121,34 +112,6 @@ export default function ComplaintDetail({
     const result = await deleteComment(commentId);
     if (result.success) {
       setComments((prev) => prev.filter((c: any) => c._id !== commentId));
-    }
-  };
-
-  const handleEditTimeline = async (timelineId: string) => {
-    if (!editTimelineComment.trim()) return;
-    setTimelineLoading(true);
-    const result = await editTimelineEntry({
-      complaintId: complaint._id,
-      timelineId,
-      comment: editTimelineComment,
-    });
-    if (result.success) {
-      setTimeline((prev: any[]) =>
-        prev.map((t: any) => t._id === timelineId ? { ...t, comment: editTimelineComment } : t)
-      );
-      setEditingTimeline(null);
-    }
-    setTimelineLoading(false);
-  };
-
-  const handleDeleteTimeline = async (timelineId: string) => {
-    if (!confirm("Delete this timeline entry?")) return;
-    const result = await deleteTimelineEntry({
-      complaintId: complaint._id,
-      timelineId,
-    });
-    if (result.success) {
-      setTimeline((prev: any[]) => prev.filter((t: any) => t._id !== timelineId));
     }
   };
 
@@ -202,11 +165,6 @@ export default function ComplaintDetail({
               <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-slate-400">
                 {complaint.category}
               </span>
-              {complaint.issueId && (
-                <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs font-mono text-indigo-400 flex items-center gap-1">
-                  <Hash className="h-3 w-3" />{complaint.issueId}
-                </span>
-              )}
             </div>
             <h1 className="text-2xl font-bold text-white sm:text-3xl">
               {complaint.title}
@@ -278,64 +236,7 @@ export default function ComplaintDetail({
             <h2 className="text-lg font-semibold text-white mb-4">
               Status Timeline
             </h2>
-            <div className="space-y-4">
-              {timeline.map((t: any, i: number) => (
-                <div key={t._id || i} className="relative flex gap-4 group">
-                  <div className="flex flex-col items-center">
-                    <div className={cn(
-                      "h-3 w-3 rounded-full border-2 mt-1.5",
-                      i === 0 ? "bg-indigo-500 border-indigo-400" : "bg-slate-700 border-slate-600"
-                    )} />
-                    {i < timeline.length - 1 && <div className="w-0.5 flex-1 bg-slate-800" />}
-                  </div>
-                  <div className="flex-1 pb-4">
-                    <div className="flex items-center gap-2">
-                      <span className={cn(
-                        "rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                        getStatusColor(t.status)
-                      )}>{t.status}</span>
-                      <span className="text-[11px] text-slate-600">{formatDate(t.createdAt)}</span>
-                      {t.updatedByName && <span className="text-[11px] text-slate-500">by {t.updatedByName}</span>}
-                    </div>
-                    {editingTimeline === t._id ? (
-                      <div className="mt-2 flex gap-2">
-                        <input
-                          value={editTimelineComment}
-                          onChange={(e) => setEditTimelineComment(e.target.value)}
-                          className="input-field text-sm flex-1"
-                        />
-                        <button onClick={() => handleEditTimeline(t._id)} disabled={timelineLoading}
-                          className="btn-primary text-xs px-3">
-                          {timelineLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
-                        </button>
-                        <button onClick={() => setEditingTimeline(null)} className="btn-secondary text-xs px-3">Cancel</button>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-slate-400 mt-1">{t.comment}</p>
-                    )}
-                    {t.images && t.images.length > 0 && (
-                      <div className="flex gap-2 mt-2">
-                        {t.images.map((img: string, j: number) => (
-                          <img key={j} src={img} alt="" className="h-16 w-16 rounded-lg object-cover border border-white/5" />
-                        ))}
-                      </div>
-                    )}
-                    {isAdmin && (
-                      <div className="flex gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => { setEditingTimeline(t._id); setEditTimelineComment(t.comment); }}
-                          className="text-[11px] text-slate-500 hover:text-indigo-400 flex items-center gap-1">
-                          <Pencil className="h-3 w-3" /> Edit
-                        </button>
-                        <button onClick={() => handleDeleteTimeline(t._id)}
-                          className="text-[11px] text-slate-500 hover:text-red-400 flex items-center gap-1">
-                          <Trash2 className="h-3 w-3" /> Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <StatusTimeline timeline={complaint.timeline} complaintId={complaint._id} />
           </div>
 
           {/* Feedback Section — Creator Only */}
@@ -488,7 +389,7 @@ export default function ComplaintDetail({
                         <span className="text-[11px] text-slate-600">
                           {formatDate(c.createdAt)}
                         </span>
-                        {(c.userId === session?.user?.id || isAdmin) && (
+                        {(c.userId === session?.user?.id || (session?.user as any)?.role === "admin") && (
                           <button
                             onClick={() => handleDeleteComment(c._id)}
                             className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-red-400 transition-all"
@@ -533,9 +434,7 @@ export default function ComplaintDetail({
                 {upvotes} Upvotes
               </button>
               <button
-                onClick={() =>
-                  navigator.clipboard.writeText(window.location.href)
-                }
+                onClick={() => setIsShareModalOpen(true)}
                 className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white transition-colors">
                 <Share2 className="h-4 w-4" />
               </button>
@@ -631,6 +530,12 @@ export default function ComplaintDetail({
           </div>
         </div>
       )}
+      <ShareModal 
+        isOpen={isShareModalOpen} 
+        onClose={() => setIsShareModalOpen(false)} 
+        url={typeof window !== "undefined" ? window.location.href : ""} 
+        title={complaint.title} 
+      />
     </div>
   );
 }

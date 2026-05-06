@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { submitDonationProof } from "@/actions/donations";
-import { addComment } from "@/actions/complaints";
+import { addComment, deleteComment } from "@/actions/complaints";
 import ImageUpload from "@/components/ImageUpload";
 import AuthModal from "@/components/AuthModal";
 import {
@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   AlertCircle,
   MessageSquare,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
@@ -94,6 +95,13 @@ export default function DonateDetailClient({
       setCommentText("");
     }
     setCommentLoading(false);
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    const result = await deleteComment(commentId);
+    if (result.success) {
+      setComments((prev) => prev.filter((c: any) => c._id !== commentId));
+    }
   };
 
   return (
@@ -231,7 +239,7 @@ export default function DonateDetailClient({
             {comments.length > 0 ? (
               <div className="space-y-4 border-t border-white/5 pt-4">
                 {comments.map((c: any) => (
-                  <div key={c._id} className="flex gap-3">
+                  <div key={c._id} className="flex gap-3 group">
                     <div className="h-7 w-7 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-400 shrink-0 mt-0.5">
                       {c.userName?.charAt(0).toUpperCase() || "?"}
                     </div>
@@ -243,6 +251,14 @@ export default function DonateDetailClient({
                         <span className="text-[11px] text-slate-600">
                           {formatDate(c.createdAt)}
                         </span>
+                        {(c.userId === session?.user?.id || (session?.user as any)?.role === "admin") && (
+                          <button
+                            onClick={() => handleDeleteComment(c._id)}
+                            className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-red-400 transition-all"
+                            title="Delete comment">
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        )}
                       </div>
                       <p className="text-sm text-slate-400 mt-0.5 break-words">
                         {c.content}

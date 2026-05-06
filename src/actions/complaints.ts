@@ -40,13 +40,13 @@ export async function createComplaint(data: {
     const complaint = await Complaint.create({
       ...validated,
       createdBy: userId || undefined,
-      status: "Pending",
+      status: "Pending Verification",
       priority: "Medium",
       upvotes: 0,
       upvotedBy: [],
       timeline: [
         {
-          status: "Pending",
+          status: "Pending Verification",
           comment: "Complaint submitted successfully",
           updatedBy: userId
             ? new mongoose.Types.ObjectId(userId)
@@ -64,7 +64,7 @@ export async function createComplaint(data: {
     if (matchingAuthority) {
       complaint.assignedTo = matchingAuthority.userId;
       complaint.timeline.push({
-        status: "Pending",
+        status: "Pending Verification",
         comment: `Auto-assigned to ${matchingAuthority.name}`,
         updatedBy: new mongoose.Types.ObjectId("000000000000000000000000"),
         updatedByName: "System",
@@ -108,13 +108,7 @@ export async function createComplaint(data: {
     };
   } catch (error: any) {
     if (error.name === "ZodError") {
-      return {
-        success: false,
-        error:
-          error.issues?.[0]?.message ||
-          error.errors?.[0]?.message ||
-          "Validation failed",
-      };
+      return { success: false, error: (error.issues?.[0]?.message || error.errors?.[0]?.message || "Validation failed") };
     }
     console.error("Create complaint error:", error);
     return { success: false, error: "Failed to submit complaint" };
@@ -138,7 +132,14 @@ export async function getComplaints(filters: ComplaintFilters = {}) {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const query: any = {};
-    if (status) query.status = status;
+    const statusFilter = status;
+    if (statusFilter) {
+      if (statusFilter === "Under Progress" || statusFilter === "In Progress") {
+        query.status = { $in: ["Under Progress", "In Progress"] };
+      } else {
+        query.status = statusFilter;
+      }
+    }
     if (category) query.category = category;
     if (priority) query.priority = priority;
     if (assignedTo) query.assignedTo = assignedTo;
@@ -150,31 +151,26 @@ export async function getComplaints(filters: ComplaintFilters = {}) {
 
     if (!["admin", "ngo", "authority"].includes(userRole)) {
       if (!userId) {
-        // Guest user: cannot see Pending
-        if (query.status === "Pending") {
-          return {
-            success: true,
-            data: { data: [], total: 0, page, limit, totalPages: 0 },
-          };
-        } else if (!query.status) {
-          query.status = { $ne: "Pending" };
+        // Guest user: cannot see Pending Verification or Rejected
+        if (statusFilter === "Pending Verification" || statusFilter === "Rejected") {
+          return { success: true, data: { data: [], total: 0, page, limit, totalPages: 0 } };
+        } else if (!statusFilter) {
+          query.status = { $nin: ["Pending Verification", "Rejected"] };
         }
       } else {
-        // Regular logged-in user: can see non-Pending OR their own Pending
-        const pendingCondition = {
-          createdBy: new mongoose.Types.ObjectId(userId),
-        };
-        const notPendingCondition = { status: { $ne: "Pending" } };
+        // Regular logged-in user: can see non-Pending/Rejected OR their own
+        const ownCondition = { createdBy: new mongoose.Types.ObjectId(userId) };
+        const publicCondition = { status: { $nin: ["Pending Verification", "Rejected"] } };
 
-        if (query.status === "Pending") {
+        if (statusFilter === "Pending Verification" || statusFilter === "Rejected") {
           query.createdBy = new mongoose.Types.ObjectId(userId);
-        } else if (!query.status) {
-          query.$or = [notPendingCondition, pendingCondition];
+        } else if (!statusFilter) {
+          query.$or = [publicCondition, ownCondition];
         }
       }
     }
 
-    // Status priority: Pending=0, Verified=1, In Progress=2, Resolved=3
+    // Status priority: Pending=0, Verified=1, Under Progress=2, Resolved=3
     // Default sort: by status order, then newest first within each status
     let sortQuery: Record<string, 1 | -1> = { createdAt: -1 };
     if (sort === "oldest") sortQuery = { createdAt: 1 };
@@ -193,21 +189,21 @@ export async function getComplaints(filters: ComplaintFilters = {}) {
       Complaint.countDocuments(query),
     ]);
 
-    // Sort by status order: Pending → Verified → In Progress → Resolved
+    // Sort by status order: Pending Verification → Verified → Under Progress → Resolved → Rejected
     const statusOrder: Record<string, number> = {
-      Pending: 0,
+      "Pending Verification": 0,
       Verified: 1,
+      "Under Progress": 2,
       "In Progress": 2,
       Resolved: 3,
+      Rejected: 4,
     };
     if (sort === "latest" || !sort) {
       complaints.sort((a: any, b: any) => {
         const sa = statusOrder[a.status] ?? 99;
         const sb = statusOrder[b.status] ?? 99;
         if (sa !== sb) return sa - sb;
-        return (
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
     }
 
@@ -232,7 +228,7 @@ export async function getComplaints(filters: ComplaintFilters = {}) {
         : null,
       upvotedBy:
         c.upvotedBy?.map((id: mongoose.Types.ObjectId) => id.toString()) || [],
-
+       
       timeline:
         c.timeline?.map((t: any) => ({
           ...t,
@@ -243,8 +239,7 @@ export async function getComplaints(filters: ComplaintFilters = {}) {
       feedback: c.feedback
         ? {
             ...c.feedback,
-            createdAt:
-              c.feedback.createdAt?.toISOString?.() || c.feedback.createdAt,
+            createdAt: c.feedback.createdAt?.toISOString?.() || c.feedback.createdAt,
           }
         : null,
       createdAt: c.createdAt?.toISOString?.() || c.createdAt,
@@ -286,9 +281,7 @@ export async function getComplaintById(id: string) {
           .populate("createdBy", "name email")
           .populate("assignedTo", "name email organization role")
           .lean();
-      } catch {
-        /* invalid ObjectId */
-      }
+      } catch { /* invalid ObjectId */ }
     }
     if (!complaint) return { success: false, error: "Complaint not found" };
 
@@ -315,7 +308,7 @@ export async function getComplaintById(id: string) {
         : null,
       upvotedBy:
         c.upvotedBy?.map((id: mongoose.Types.ObjectId) => id.toString()) || [],
-
+       
       timeline:
         c.timeline?.map((t: any) => ({
           ...t,
@@ -326,8 +319,7 @@ export async function getComplaintById(id: string) {
       feedback: c.feedback
         ? {
             ...c.feedback,
-            createdAt:
-              c.feedback.createdAt?.toISOString?.() || c.feedback.createdAt,
+            createdAt: c.feedback.createdAt?.toISOString?.() || c.feedback.createdAt,
           }
         : null,
       createdAt: c.createdAt?.toISOString?.() || c.createdAt,
@@ -407,9 +399,9 @@ export async function updateComplaintStatus(data: {
     if (!complaint) return { success: false, error: "Complaint not found" };
 
     complaint.status = validated.status as
-      | "Pending"
+      | "Pending Verification"
       | "Verified"
-      | "In Progress"
+      | "Under Progress"
       | "Resolved";
     complaint.timeline.push({
       status: validated.status,
@@ -443,13 +435,7 @@ export async function updateComplaintStatus(data: {
     return { success: true, message: "Status updated" };
   } catch (error: any) {
     if (error.name === "ZodError") {
-      return {
-        success: false,
-        error:
-          error.issues?.[0]?.message ||
-          error.errors?.[0]?.message ||
-          "Validation failed",
-      };
+      return { success: false, error: (error.issues?.[0]?.message || error.errors?.[0]?.message || "Validation failed") };
     }
     console.error("Status update error:", error);
     return { success: false, error: "Failed to update status" };
@@ -505,13 +491,7 @@ export async function assignComplaint(data: {
     return { success: true, message: "Assigned" };
   } catch (error: any) {
     if (error.name === "ZodError") {
-      return {
-        success: false,
-        error:
-          error.issues?.[0]?.message ||
-          error.errors?.[0]?.message ||
-          "Validation failed",
-      };
+      return { success: false, error: (error.issues?.[0]?.message || error.errors?.[0]?.message || "Validation failed") };
     }
     console.error("Assignment error:", error);
     return { success: false, error: "Failed to assign" };
@@ -562,12 +542,11 @@ export async function editComplaint(data: {
       return { success: false, error: "You can only edit your own complaints" };
     }
 
-    // Only allow edits on Pending/Verified complaints (unless admin)
-    if (!isAdmin && !["Pending", "Verified"].includes(complaint.status)) {
+    // Only allow edits on Pending Verification/Verified/Rejected complaints (unless admin)
+    if (!isAdmin && !["Pending Verification", "Verified", "Rejected"].includes(complaint.status)) {
       return {
         success: false,
-        error:
-          "Cannot edit a complaint that is already In Progress or Resolved",
+        error: "Cannot edit a complaint that is already Under Progress or Resolved",
       };
     }
 
@@ -579,6 +558,18 @@ export async function editComplaint(data: {
     }
     if (data.location) complaint.location = data.location as any;
     if (data.images !== undefined) complaint.images = data.images;
+
+    // Resubmit logic for Rejected complaints
+    if (complaint.status === "Rejected") {
+      complaint.status = "Pending Verification";
+      complaint.timeline.push({
+        status: "Pending Verification",
+        comment: "Complaint updated and resubmitted by user",
+        updatedBy: new mongoose.Types.ObjectId(session.user.id),
+        updatedByName: session.user.name || "User",
+        createdAt: new Date(),
+      });
+    }
 
     await complaint.save();
 
@@ -597,25 +588,36 @@ export async function editComplaint(data: {
 export async function getDashboardAnalytics() {
   try {
     await connectDB();
+    const session = await auth();
+    if (!session?.user) return { success: false, error: "Auth required" };
+    const role = (session.user as { role?: string }).role || "user";
+
+    const match: Record<string, unknown> = {};
+    if (role === "user" && session.user.id) {
+      match.createdBy = new mongoose.Types.ObjectId(session.user.id);
+    }
     const [
       total,
       pending,
       verified,
       inProgress,
       resolved,
+      rejected,
       categoryStats,
       recentComplaints,
     ] = await Promise.all([
-      Complaint.countDocuments(),
-      Complaint.countDocuments({ status: "Pending" }),
-      Complaint.countDocuments({ status: "Verified" }),
-      Complaint.countDocuments({ status: "In Progress" }),
-      Complaint.countDocuments({ status: "Resolved" }),
+      Complaint.countDocuments(match),
+      Complaint.countDocuments({ ...match, status: "Pending Verification" }),
+      Complaint.countDocuments({ ...match, status: "Verified" }),
+      Complaint.countDocuments({ ...match, status: "Under Progress" }),
+      Complaint.countDocuments({ ...match, status: "Resolved" }),
+      Complaint.countDocuments({ ...match, status: "Rejected" }),
       Complaint.aggregate([
+        { $match: match },
         { $group: { _id: "$category", count: { $sum: 1 } } },
         { $sort: { count: -1 } },
       ]),
-      Complaint.find()
+      Complaint.find(match)
         .sort({ createdAt: -1 })
         .limit(5)
         .select("title status category createdAt")
@@ -630,7 +632,8 @@ export async function getDashboardAnalytics() {
         verifiedComplaints: verified,
         inProgressComplaints: inProgress,
         resolvedComplaints: resolved,
-        categoryStats: categoryStats.map((c) => ({
+        rejectedComplaints: rejected,
+        categoryStats: categoryStats.map((c: any) => ({
           category: c._id,
           count: c.count,
         })),
@@ -681,7 +684,7 @@ export async function getAllUsers() {
       return { success: false, error: "Admin required" };
 
     const users = await User.find().select("-password").lean();
-
+     
     return {
       success: true,
       data: users.map((u: any) => ({
@@ -708,9 +711,7 @@ export async function updateUserRole(userId: string, role: string) {
 
     // If demoting away from authority/ngo, remove Authority record
     if (!["authority", "ngo"].includes(role)) {
-      await Authority.deleteMany({
-        userId: new mongoose.Types.ObjectId(userId),
-      });
+      await Authority.deleteMany({ userId: new mongoose.Types.ObjectId(userId) });
     }
 
     revalidatePath("/dashboard");
@@ -759,10 +760,11 @@ export async function updateUserRoleWithDetails(data: {
         userId: user._id,
       };
 
-      await Authority.findOneAndUpdate({ userId: user._id }, authorityData, {
-        upsert: true,
-        new: true,
-      });
+      await Authority.findOneAndUpdate(
+        { userId: user._id },
+        authorityData,
+        { upsert: true, new: true }
+      );
     } else {
       // If demoting, remove Authority record
       await Authority.deleteMany({ userId: user._id });
@@ -821,10 +823,9 @@ export async function addComment(data: {
       content: data.content.trim(),
     });
 
-    const path =
-      data.targetType === "complaint"
-        ? `/complaints/${data.targetId}`
-        : `/donate/${data.targetId}`;
+    const path = data.targetType === "complaint"
+      ? `/complaints/${data.targetId}`
+      : `/donate/${data.targetId}`;
     revalidatePath(path);
 
     return {
@@ -843,10 +844,7 @@ export async function addComment(data: {
 }
 
 /** Get comments for a complaint or campaign */
-export async function getComments(
-  targetType: "complaint" | "campaign",
-  targetId: string,
-) {
+export async function getComments(targetType: "complaint" | "campaign", targetId: string) {
   try {
     await connectDB();
     const comments = await Comment.find({
@@ -889,15 +887,9 @@ export async function submitFeedback(data: {
     if (!complaint) return { success: false, error: "Complaint not found" };
 
     if (complaint.createdBy?.toString() !== session.user.id)
-      return {
-        success: false,
-        error: "Only the complaint creator can give feedback",
-      };
+      return { success: false, error: "Only the complaint creator can give feedback" };
     if (complaint.status !== "Resolved")
-      return {
-        success: false,
-        error: "Feedback can only be given on resolved complaints",
-      };
+      return { success: false, error: "Feedback can only be given on resolved complaints" };
     if (complaint.feedback?.rating)
       return { success: false, error: "Feedback already submitted" };
     if (data.rating < 1 || data.rating > 5)
@@ -948,6 +940,13 @@ export async function deleteComment(commentId: string) {
 
 // ============ TIMELINE MANAGEMENT (Admin) ============
 
+function normalizeComplaintStatus(status?: string) {
+  if (!status) return status;
+  if (status === "Pending") return "Pending Verification";
+  if (status === "In Progress") return "Under Progress";
+  return status;
+}
+
 /** Edit a timeline entry (admin only) */
 export async function editTimelineEntry(data: {
   complaintId: string;
@@ -964,12 +963,21 @@ export async function editTimelineEntry(data: {
     const complaint = await Complaint.findById(data.complaintId);
     if (!complaint) return { success: false, error: "Complaint not found" };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const entry = (complaint.timeline as any).id(data.timelineId);
+    const entry = complaint.timeline.id(data.timelineId);
     if (!entry) return { success: false, error: "Timeline entry not found" };
 
     if (data.comment) entry.comment = data.comment;
-    if (data.status) entry.status = data.status as any;
+    const normalizedStatus = normalizeComplaintStatus(data.status);
+    if (normalizedStatus) entry.status = normalizedStatus as any;
+
+    // Sync main status with the latest timeline entry
+    complaint.timeline.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    if (complaint.timeline.length > 0) {
+      complaint.status = normalizeComplaintStatus(
+        complaint.timeline[complaint.timeline.length - 1].status as any,
+      ) as any;
+    }
+
     await complaint.save();
 
     revalidatePath(`/complaints/${data.complaintId}`);
@@ -994,6 +1002,18 @@ export async function deleteTimelineEntry(data: {
     await Complaint.findByIdAndUpdate(data.complaintId, {
       $pull: { timeline: { _id: data.timelineId } },
     });
+
+    // Recalculate main status
+    const updatedComplaint = await Complaint.findById(data.complaintId);
+    if (updatedComplaint) {
+      updatedComplaint.timeline.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      updatedComplaint.status = updatedComplaint.timeline.length > 0
+        ? (normalizeComplaintStatus(
+            updatedComplaint.timeline[updatedComplaint.timeline.length - 1].status as any,
+          ) as any)
+        : "Pending Verification";
+      await updatedComplaint.save();
+    }
 
     revalidatePath(`/complaints/${data.complaintId}`);
     return { success: true, message: "Timeline entry deleted" };
@@ -1048,9 +1068,7 @@ export async function getAllFeedbackForDashboard() {
     if (!["admin", "ngo", "authority"].includes(role))
       return { success: false, error: "Insufficient permissions" };
 
-    const complaints = await Complaint.find({
-      "feedback.rating": { $exists: true, $ne: null },
-    })
+    const complaints = await Complaint.find({ "feedback.rating": { $exists: true, $ne: null } })
       .select("issueId title feedback status")
       .sort({ "feedback.createdAt": -1 })
       .limit(100)
@@ -1066,8 +1084,7 @@ export async function getAllFeedbackForDashboard() {
         feedback: {
           rating: c.feedback.rating,
           comment: c.feedback.comment,
-          createdAt:
-            c.feedback.createdAt?.toISOString?.() || c.feedback.createdAt,
+          createdAt: c.feedback.createdAt?.toISOString?.() || c.feedback.createdAt,
         },
       })),
     };

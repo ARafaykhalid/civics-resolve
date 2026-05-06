@@ -32,7 +32,7 @@ const adminLinks = [
   { href: "/dashboard/announcements", label: "Announcements", icon: Megaphone },
   { href: "/dashboard/volunteers", label: "Volunteers", icon: HandHelping },
   { href: "/dashboard/events", label: "Events", icon: CalendarDays },
-  { href: "/dashboard/comments", label: "Comments", icon: MessageSquare },
+  { href: "/dashboard/discussions", label: "Discussions", icon: MessageSquare },
 ];
 
 const authorityLinks = [
@@ -44,7 +44,7 @@ const authorityLinks = [
   },
   { href: "/dashboard/volunteers", label: "Volunteers", icon: HandHelping },
   { href: "/dashboard/events", label: "Events", icon: CalendarDays },
-  { href: "/dashboard/comments", label: "Comments", icon: MessageSquare },
+  { href: "/dashboard/discussions", label: "Discussions", icon: MessageSquare },
 ];
 
 const userLinks = [

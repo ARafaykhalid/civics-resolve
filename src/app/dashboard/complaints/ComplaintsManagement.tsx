@@ -5,6 +5,7 @@ import {
   assignComplaint,
   updateComplaintStatus,
   deleteComplaint,
+  editComplaint,
 } from "@/actions/complaints";
 import ConfirmModal from "@/components/ConfirmModal";
 import Dropdown from "@/components/Dropdown";
@@ -18,8 +19,13 @@ import {
   Search,
   Filter,
   ExternalLink,
+  Pencil,
+  X,
+  MapPin,
 } from "lucide-react";
 import Link from "next/link";
+
+const categories = ["Road", "Water", "Electricity", "Garbage", "Safety", "Other"];
 
 export default function ComplaintsManagement({
   complaints,
@@ -45,6 +51,16 @@ export default function ComplaintsManagement({
   const [statusImages, setStatusImages] = useState<string[]>([]);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [actionError, setActionError] = useState("");
+  const [editModal, setEditModal] = useState<any>(null);
+  const [editForm, setEditForm] = useState({
+    title: "",
+    description: "",
+    category: "",
+    address: "",
+    images: [] as string[],
+  });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState("");
 
   const filtered = complaints.filter((c) => {
     const matchStatus = !filter.status || c.status === filter.status;
@@ -100,6 +116,44 @@ export default function ComplaintsManagement({
     }
   };
 
+  const openEdit = (c: any) => {
+    setEditForm({
+      title: c.title || "",
+      description: c.description || "",
+      category: c.category || "",
+      address: c.location?.address || "",
+      images: c.images || [],
+    });
+    setEditModal(c);
+    setEditError("");
+  };
+
+  const handleEdit = async () => {
+    if (!editModal) return;
+    setEditLoading(true);
+    setEditError("");
+    const result = await editComplaint({
+      complaintId: editModal._id,
+      title: editForm.title,
+      description: editForm.description,
+      category: editForm.category,
+      location: {
+        address: editForm.address,
+        lat: editModal.location?.lat,
+        lng: editModal.location?.lng,
+      },
+      images: editForm.images,
+    });
+    if (result.success) {
+      setEditModal(null);
+      setEditLoading(false);
+      window.location.reload();
+    } else {
+      setEditError(result.error || "Failed to update");
+      setEditLoading(false);
+    }
+  };
+
   const executeDelete = async () => {
     if (!confirmDelete) return;
     setLoading(confirmDelete);
@@ -115,7 +169,7 @@ export default function ComplaintsManagement({
 
       {/* Status Tabs */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
-        {["", "Pending", "Verified", "In Progress", "Resolved"].map((s) => {
+        {["", "Pending Verification", "Verified", "Under Progress", "Resolved", "Rejected"].map((s) => {
           const label = s || "All Complaints";
           return (
             <button
@@ -238,6 +292,12 @@ export default function ComplaintsManagement({
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1.5">
                       <button
+                        onClick={() => openEdit(c)}
+                        className="rounded-lg p-1.5 text-slate-500 hover:bg-indigo-500/10 hover:text-indigo-400"
+                        title="Edit">
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
                         onClick={() => {
                           setModal({ type: "assign", id: c._id });
                           setSelectedAuthority("");
@@ -343,10 +403,11 @@ export default function ComplaintsManagement({
                       options={[
                         { label: "Select...", value: "" },
                         ...[
-                          "Pending",
+                          "Pending Verification",
                           "Verified",
-                          "In Progress",
+                          "Under Progress",
                           "Resolved",
+                          "Rejected",
                         ].map((s) => ({ label: s, value: s })),
                       ]}
                     />
@@ -392,6 +453,119 @@ export default function ComplaintsManagement({
                     "Assign"
                   ) : (
                     "Update"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setEditModal(null)}>
+          <div
+            className="w-full max-w-xl glass-card p-6 m-4 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-semibold text-white">Edit Complaint</h3>
+              <button
+                onClick={() => setEditModal(null)}
+                className="rounded-lg p-1.5 text-slate-500 hover:bg-white/5 hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {editError && (
+              <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">
+                {editError}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="label-text">Title</label>
+                <input
+                  value={editForm.title}
+                  onChange={(e) =>
+                    setEditForm((p) => ({ ...p, title: e.target.value }))
+                  }
+                  className="input-field"
+                  minLength={5}
+                  maxLength={100}
+                />
+              </div>
+
+              <div className="relative z-20">
+                <label className="label-text">Category</label>
+                <Dropdown
+                  value={editForm.category}
+                  onChange={(val) =>
+                    setEditForm((p) => ({ ...p, category: val }))
+                  }
+                  options={categories.map((c) => ({ label: c, value: c }))}
+                />
+              </div>
+
+              <div>
+                <label className="label-text">Description</label>
+                <textarea
+                  value={editForm.description}
+                  onChange={(e) =>
+                    setEditForm((p) => ({
+                      ...p,
+                      description: e.target.value,
+                    }))
+                  }
+                  className="input-field min-h-[120px]"
+                  minLength={20}
+                  maxLength={2000}
+                />
+                <p className="mt-1 text-xs text-slate-500 text-right">
+                  {editForm.description.length}/2000
+                </p>
+              </div>
+
+              <div>
+                <label className="label-text flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5" /> Location
+                </label>
+                <input
+                  value={editForm.address}
+                  onChange={(e) =>
+                    setEditForm((p) => ({ ...p, address: e.target.value }))
+                  }
+                  className="input-field"
+                  minLength={5}
+                />
+              </div>
+
+              <div>
+                <label className="label-text">Images</label>
+                <ImageUpload
+                  images={editForm.images}
+                  onChange={(imgs) =>
+                    setEditForm((p) => ({ ...p, images: imgs }))
+                  }
+                  maxFiles={5}
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setEditModal(null)}
+                  className="btn-secondary flex-1">
+                  Cancel
+                </button>
+                <button
+                  onClick={handleEdit}
+                  disabled={editLoading}
+                  className="btn-primary flex-1">
+                  {editLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Save Changes"
                   )}
                 </button>
               </div>

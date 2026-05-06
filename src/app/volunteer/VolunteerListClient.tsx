@@ -103,7 +103,7 @@ export default function VolunteerListClient({ opportunities }: { opportunities: 
                 {loadingId === v._id ? <Loader2 className="h-4 w-4 animate-spin" /> : <HandHelping className="h-4 w-4" />}
                 {hasJoined ? "You've Joined" : isFull ? "Full" : !v.isActive ? "Closed" : "Volunteer Now"}
               </button>
-              <Link href={`/volunteer/${v._id}`} className="w-full mt-2 text-xs text-center py-2 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-white/5 transition-colors flex items-center justify-center gap-1">
+              <Link href={`/volunteer/${v._id}`} className="flex items-center justify-center gap-1.5 w-full mt-2 text-xs text-slate-400 hover:text-indigo-400 transition-colors py-1.5">
                 <ExternalLink className="h-3 w-3" /> View Details
               </Link>
               </div>

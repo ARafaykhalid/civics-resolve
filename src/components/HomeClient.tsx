@@ -309,7 +309,7 @@ export default function HomeClient({
                 <div className="absolute bottom-4 left-4 right-4 text-white">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="px-2 py-1 bg-amber-500/20 text-amber-400 text-xs rounded-md backdrop-blur-md font-medium border border-amber-500/20">
-                      In Progress
+                      Under Progress
                     </span>
                   </div>
                   <p className="font-medium text-sm">
@@ -354,7 +354,7 @@ export default function HomeClient({
                   gradient: "from-green-500 to-emerald-600",
                 },
                 {
-                  label: "In Progress",
+                  label: "Under Progress",
                   value: analytics.inProgressComplaints,
                   icon: TrendingUp,
                   gradient: "from-orange-500 to-amber-600",
@@ -724,7 +724,7 @@ export default function HomeClient({
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {complaints.slice(0, 3).map((c: any) => (
               <div key={c._id} className="transition-all hover:-translate-y-1">
-                <ComplaintCard complaint={c} />
+                <ComplaintCard complaint={c} variant={c.status === "Pending Verification" ? "pending" : "default"} />
               </div>
             ))}
           </div>

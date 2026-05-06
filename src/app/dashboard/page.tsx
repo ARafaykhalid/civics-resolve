@@ -24,12 +24,13 @@ export default async function DashboardOverview() {
 
       {/* Analytics Cards */}
       {analytics && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5 mb-8">
           {[
             { label: "Total Issues", value: analytics.totalComplaints, icon: BarChart3, color: "text-indigo-400 bg-indigo-500/10" },
             { label: "Pending", value: analytics.pendingComplaints, icon: Clock, color: "text-yellow-400 bg-yellow-500/10" },
-            { label: "In Progress", value: analytics.inProgressComplaints, icon: TrendingUp, color: "text-orange-400 bg-orange-500/10" },
+            { label: "Under Progress", value: analytics.inProgressComplaints, icon: TrendingUp, color: "text-orange-400 bg-orange-500/10" },
             { label: "Resolved", value: analytics.resolvedComplaints, icon: CheckCircle2, color: "text-green-400 bg-green-500/10" },
+            { label: "Rejected", value: analytics.rejectedComplaints, icon: AlertTriangle, color: "text-red-400 bg-red-500/10" },
           ].map((stat) => (
             <div key={stat.label} className="glass-card p-5">
               <div className="flex items-center justify-between">
@@ -79,7 +80,7 @@ export default async function DashboardOverview() {
                   </div>
                   <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold ml-3 shrink-0",
                     c.status === "Resolved" ? "bg-green-500/10 text-green-400" :
-                    c.status === "In Progress" ? "bg-orange-500/10 text-orange-400" :
+                    c.status === "Under Progress" ? "bg-orange-500/10 text-orange-400" :
                     "bg-yellow-500/10 text-yellow-400"
                   )}>{c.status}</span>
                 </Link>
