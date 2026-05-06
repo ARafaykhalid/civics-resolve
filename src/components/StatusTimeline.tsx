@@ -3,7 +3,18 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { editTimelineEntry, deleteTimelineEntry } from "@/actions/complaints";
-import { CheckCircle2, Clock, AlertCircle, ArrowRight, Pencil, Trash2, X, Save, Loader2, XCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  ArrowRight,
+  Pencil,
+  Trash2,
+  X,
+  Save,
+  Loader2,
+  XCircle,
+} from "lucide-react";
 import { cn, formatDateTime, getStatusColor } from "@/lib/utils";
 import type { TimelineEntry } from "@/types";
 
@@ -20,7 +31,10 @@ const statusIcons: Record<string, typeof CheckCircle2> = {
   Rejected: XCircle,
 };
 
-export default function StatusTimeline({ timeline, complaintId }: StatusTimelineProps) {
+export default function StatusTimeline({
+  timeline,
+  complaintId,
+}: StatusTimelineProps) {
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.role === "admin";
 
@@ -53,7 +67,9 @@ export default function StatusTimeline({ timeline, complaintId }: StatusTimeline
     if (result.success) {
       setLocalTimeline((prev) =>
         prev.map((t) =>
-          t._id === entryId ? { ...t, comment: editComment, status: editStatus } : t,
+          t._id === entryId
+            ? { ...t, comment: editComment, status: editStatus as any }
+            : t,
         ),
       );
       setEditingId(null);
@@ -64,7 +80,10 @@ export default function StatusTimeline({ timeline, complaintId }: StatusTimeline
   const handleDelete = async (entryId: string) => {
     if (!complaintId || !confirm("Delete this timeline entry?")) return;
     setDeletingId(entryId);
-    const result = await deleteTimelineEntry({ complaintId, timelineId: entryId });
+    const result = await deleteTimelineEntry({
+      complaintId,
+      timelineId: entryId,
+    });
     if (result.success) {
       setLocalTimeline((prev) => prev.filter((t) => t._id !== entryId));
     }
@@ -80,9 +99,22 @@ export default function StatusTimeline({ timeline, complaintId }: StatusTimeline
         const isLatest = index === localTimeline.length - 1;
         const isEditing = editingId === entry._id;
         return (
-          <div key={entry._id || index} className="relative flex gap-4 pb-6 last:pb-0 group">
-            <div className={cn("relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-all", isLatest ? "border-indigo-500 bg-indigo-500/20" : "border-slate-700 bg-slate-800")}>
-              <Icon className={cn("h-4 w-4", isLatest ? "text-indigo-400" : "text-slate-500")} />
+          <div
+            key={entry._id || index}
+            className="relative flex gap-4 pb-6 last:pb-0 group">
+            <div
+              className={cn(
+                "relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-all",
+                isLatest
+                  ? "border-indigo-500 bg-indigo-500/20"
+                  : "border-slate-700 bg-slate-800",
+              )}>
+              <Icon
+                className={cn(
+                  "h-4 w-4",
+                  isLatest ? "text-indigo-400" : "text-slate-500",
+                )}
+              />
             </div>
             <div className="min-w-0 flex-1 pt-1">
               {isEditing ? (
@@ -91,7 +123,9 @@ export default function StatusTimeline({ timeline, complaintId }: StatusTimeline
                     value={editStatus}
                     onChange={(e) => setEditStatus(e.target.value)}
                     className="input-field text-xs py-1">
-                    <option value="Pending Verification">Pending Verification</option>
+                    <option value="Pending Verification">
+                      Pending Verification
+                    </option>
                     <option value="Verified">Verified</option>
                     <option value="Under Progress">Under Progress</option>
                     <option value="Resolved">Resolved</option>
@@ -107,9 +141,16 @@ export default function StatusTimeline({ timeline, complaintId }: StatusTimeline
                       onClick={() => handleSave(entry._id!)}
                       disabled={saving}
                       className="btn-primary text-xs py-1 px-3">
-                      {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />} Save
+                      {saving ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Save className="h-3 w-3" />
+                      )}{" "}
+                      Save
                     </button>
-                    <button onClick={() => setEditingId(null)} className="btn-secondary text-xs py-1 px-3">
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="btn-secondary text-xs py-1 px-3">
                       <X className="h-3 w-3" /> Cancel
                     </button>
                   </div>
@@ -117,30 +158,53 @@ export default function StatusTimeline({ timeline, complaintId }: StatusTimeline
               ) : (
                 <>
                   <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <span className={cn("rounded-full border px-2.5 py-0.5 text-[11px] font-semibold", getStatusColor(entry.status))}>{entry.status}</span>
-                    <span className="text-xs text-slate-500">{formatDateTime(entry.createdAt)}</span>
+                    <span
+                      className={cn(
+                        "rounded-full border px-2.5 py-0.5 text-[11px] font-semibold",
+                        getStatusColor(entry.status),
+                      )}>
+                      {entry.status}
+                    </span>
+                    <span className="text-xs text-slate-500">
+                      {formatDateTime(entry.createdAt)}
+                    </span>
                     {isAdmin && complaintId && (
                       <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-all">
-                        <button onClick={() => handleEdit(entry)} className="text-slate-600 hover:text-indigo-400 transition-colors" title="Edit">
+                        <button
+                          onClick={() => handleEdit(entry)}
+                          className="text-slate-600 hover:text-indigo-400 transition-colors"
+                          title="Edit">
                           <Pencil className="h-3 w-3" />
                         </button>
                         <button
                           onClick={() => handleDelete(entry._id!)}
                           disabled={deletingId === entry._id}
-                          className="text-slate-600 hover:text-red-400 transition-colors" title="Delete">
-                          {deletingId === entry._id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                          className="text-slate-600 hover:text-red-400 transition-colors"
+                          title="Delete">
+                          {deletingId === entry._id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3 w-3" />
+                          )}
                         </button>
                       </div>
                     )}
                   </div>
                   <p className="text-sm text-slate-300">{entry.comment}</p>
                   {entry.updatedByName && (
-                    <p className="mt-0.5 text-xs text-slate-600">by {entry.updatedByName}</p>
+                    <p className="mt-0.5 text-xs text-slate-600">
+                      by {entry.updatedByName}
+                    </p>
                   )}
                   {entry.images && entry.images.length > 0 && (
                     <div className="mt-2 flex gap-2 flex-wrap">
                       {entry.images.map((img, i) => (
-                        <img key={i} src={img} alt="Proof" className="h-16 w-16 rounded-lg object-cover border border-white/5" />
+                        <img
+                          key={i}
+                          src={img}
+                          alt="Proof"
+                          className="h-16 w-16 rounded-lg object-cover border border-white/5"
+                        />
                       ))}
                     </div>
                   )}

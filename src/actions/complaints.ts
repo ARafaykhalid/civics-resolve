@@ -134,7 +134,7 @@ export async function getComplaints(filters: ComplaintFilters = {}) {
     const query: any = {};
     const statusFilter = status;
     if (statusFilter) {
-      if (statusFilter === "Under Progress" || statusFilter === "In Progress") {
+      if (statusFilter === "Under Progress") {
         query.status = { $in: ["Under Progress", "In Progress"] };
       } else {
         query.status = statusFilter;
@@ -963,7 +963,9 @@ export async function editTimelineEntry(data: {
     const complaint = await Complaint.findById(data.complaintId);
     if (!complaint) return { success: false, error: "Complaint not found" };
 
-    const entry = complaint.timeline.id(data.timelineId);
+    const entry = complaint.timeline.find(
+      (t: any) => t._id?.toString() === data.timelineId,
+    );
     if (!entry) return { success: false, error: "Timeline entry not found" };
 
     if (data.comment) entry.comment = data.comment;
