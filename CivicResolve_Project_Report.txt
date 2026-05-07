@@ -1,0 +1,137 @@
+================================================================================
+                    CIVICRESOLVE - COMPREHENSIVE PROJECT REPORT
+================================================================================
+
+1. EXECUTIVE SUMMARY
+--------------------------------------------------------------------------------
+CivicResolve is a comprehensive, community-driven web platform designed to empower citizens to report local civic issues, track their resolution, and engage in community building through volunteering, events, and transparent donations. By connecting citizens directly with local authorities and NGOs, the platform ensures transparency, accountability, and active community participation.
+
+2. CORE PURPOSE & FUNCTIONALITY
+--------------------------------------------------------------------------------
+The primary goal of CivicResolve is to digitize and streamline the civic reporting process. Citizens often face hurdles when reporting municipal issues (e.g., potholes, broken streetlights, water scarcity). CivicResolve provides a centralized portal where:
+- Users can report issues with geospatial data and images.
+- Authorities/NGOs can claim, track, update, and resolve issues via a timeline.
+- Communities can fund local infrastructure campaigns using zero-fee QR donations.
+- Volunteers can discover and join local drives or community events.
+
+3. TECHNOLOGY STACK (DETAILED)
+--------------------------------------------------------------------------------
+The platform is built using a modern, scalable, and type-safe JavaScript/TypeScript stack:
+
+• Frontend (Client & Server Components):
+  - Next.js 16.2.4 (App Router)
+  - React 19.2.4 & React DOM
+  - TypeScript (for strict type safety across the entire stack)
+  - Tailwind CSS v4 (for utility-first, responsive styling)
+  - GSAP v3.15 (@gsap/react) (for high-performance, dynamic UI animations)
+  - Lucide React (for consistent, clean iconography)
+  - React Leaflet / Leaflet (for interactive mapping and geospatial coordination)
+
+• Backend (Serverless APIs & Server Actions):
+  - Next.js Server Actions (for seamless client-to-server data mutations)
+  - Node.js (Runtime environment)
+
+• Database & ORM:
+  - MongoDB (NoSQL Database for flexible document storage)
+  - Mongoose v9.5.0 (Object Data Modeling (ODM) library for MongoDB)
+
+• Authentication & Security:
+  - Auth.js (NextAuth beta v5.0.0-beta.31) using Credentials Strategy.
+  - bcryptjs (for secure password hashing).
+
+• Media & Storage:
+  - Cloudinary & next-cloudinary (for robust image uploading, transformation, and delivery).
+
+• Validation:
+  - Zod v4.3.6 (for strict schema validation on forms, APIs, and Server Actions).
+
+• Communication:
+  - Resend (for handling transactional emails, notifications, and verifications).
+
+4. ARCHITECTURE & DIRECTORY STRUCTURE
+--------------------------------------------------------------------------------
+The project follows a modular, feature-based architecture within the Next.js App Router paradigm:
+
+src/
+├── actions/         # Server Actions (Database queries & mutations: complaints, community, donations)
+├── app/             # App Router pages, layouts, and API routes
+│   ├── api/         # Core API Routes (Auth callbacks, direct integrations)
+│   ├── dashboard/   # Unified Role-based Dashboard for managing entities
+│   ├── donate/      # Frontend for viewing and participating in donation campaigns
+│   ├── events/      # Frontend for community events
+│   ├── volunteer/   # Frontend for volunteer opportunities
+│   └── complaints/  # Frontend for browsing, searching, and viewing complaints
+├── components/      # Reusable UI components (Navbars, Cards, Modals, Forms)
+├── lib/             # Utility functions, DB connection (db.ts), Auth config, Zod schemas
+├── models/          # Mongoose Database Models mapping strictly to TypeScript interfaces
+├── scripts/         # Utility scripts (e.g., seed.ts for DB population)
+└── types/           # Global TypeScript type definitions and interfaces
+
+5. DATABASE SCHEMA & DATA MODELS
+--------------------------------------------------------------------------------
+The database is structured around several core entities:
+
+• User Model:
+  Stores user credentials, role ("user", "admin", "ngo", "authority"), organization name, and verification status.
+
+• Complaint Model:
+  Stores issue data (title, description, category [Road, Water, Electricity, etc.], priority, status).
+  Includes geospatial data (lat, lng, address), image URLs, and an array of upvotes.
+  Contains an embedded `timeline` array to track state transitions (e.g., Pending -> Verified -> In Progress -> Resolved), complete with timestamped comments and images.
+
+• DonationCampaign Model:
+  Created by admins. Stores campaign details (goal amount, raised amount, category), images, and a vital `qrCodeImage` (typically a UPI QR code) for zero-fee, peer-to-peer donations.
+
+• Donation (Transaction Proof) Model:
+  Links to a DonationCampaign. Stores the donor's transaction ID and a screenshot of the payment proof. Admins manually verify this to update the campaign's `raisedAmount`.
+
+• Event Model:
+  Stores community event details, date, location, organizer info, and an array of attendee ObjectIds.
+
+• Volunteer Model:
+  Similar to events but geared towards active participation in drives or relief efforts. Includes skills required and shifts.
+
+6. KEY FEATURES BREAKDOWN
+--------------------------------------------------------------------------------
+A. Civic Issue Reporting & Resolution:
+   - Users submit issues via a multi-step form including map-based location selection.
+   - Issues are displayed on a public board where others can "upvote" them to increase visibility.
+   - Authorities update the issue status, which appends to a public timeline, ensuring the original reporter and community see exact progress.
+
+B. Community Funding (Donations):
+   - A unique zero-fee model. Instead of integrating a payment gateway that takes a cut, the platform displays the organization's QR code.
+   - The user pays via their banking app, then returns to the platform to submit the TXN ID and a screenshot.
+   - Admins use the dashboard to cross-reference their bank statements, approve the proof, and the campaign progress bar fills up.
+
+C. Community Engagement (Events & Volunteering):
+   - Dedicated boards for citizens to find local events or volunteer shifts.
+   - Users can RSVP or apply directly through the platform.
+
+D. Unified Dashboard:
+   - A singular `/dashboard` route that dynamically renders different sidebars, analytics, and data tables based on the user's role.
+   - Admins see comprehensive metrics and have full CRUD access.
+   - NGOs/Authorities see only issues assigned to their category or organization.
+
+7. USER ROLES & PERMISSIONS
+--------------------------------------------------------------------------------
+• Admin: Full platform control. Can create donation campaigns, post global announcements, verify donation proofs, and manage all users and complaints.
+• Authority / NGO: Can view issues relevant to their department (e.g., Water Board). They update complaint timelines (uploading proof of work) to transition statuses to "Resolved".
+• User: Standard citizen account. Can post complaints, upvote, donate, and RSVP to events.
+
+8. SECURITY & BEST PRACTICES
+--------------------------------------------------------------------------------
+- Type Safety: End-to-end TypeScript ensures models, components, and actions share the same type definitions.
+- Server Actions Validation: Every Server Action uses Zod to validate input payloads, preventing malicious data insertion.
+- Auth Guards: Role checks are enforced both at the UI routing level (middleware/layout) and the Server Action level.
+- Lean Queries: Mongoose queries fetch data using `.lean()` for massive performance gains when passing data to React Server Components.
+- Password Security: `bcryptjs` is used for hashing passwords before saving to MongoDB.
+
+9. DEVELOPMENT & DEPLOYMENT
+--------------------------------------------------------------------------------
+- Environment Variables required: MONGODB_URI, AUTH_SECRET, CLOUDINARY_API_KEY/SECRET, RESEND_API_KEY.
+- A robust seed script (`src/scripts/seed.ts`) is provided to instantly populate a fresh database with realistic dummy data for testing UI and edge cases.
+- Run locally via standard Next.js commands: `npm install`, `npm run dev`.
+
+================================================================================
+END OF REPORT
+================================================================================

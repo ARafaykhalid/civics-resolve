@@ -653,7 +653,7 @@ export default function HomeClient({
             },
             {
               name: "Ayesha Shaikh",
-              role: "24BSSW026",
+              role: "24BSSW022",
               img: "https://res.cloudinary.com/dnnh6pyhk/image/upload/f_auto,q_80,w_640,c_limit/v1756875014/ayesha_byhx29.webp",
             },
 
@@ -673,9 +673,9 @@ export default function HomeClient({
               img: "https://res.cloudinary.com/dnnh6pyhk/image/upload/f_auto,q_80,w_640,c_limit/v1756875015/saad_uogypz.webp",
             },
             {
-              name: "Abdul Rehman Dakait",
-              role: "24BSSW100",
-              img: "https://res.cloudinary.com/dnnh6pyhk/image/upload/f_auto,q_80,w_640,c_limit/v1759554528/hitmsacm_profiles/24BSSW100.jpg",
+              name: "Abdul Moiz Khan",
+              role: "24BSSW036",
+              img: "https://res.cloudinary.com/dnnh6pyhk/image/upload/v1778169710/681180350_18113270761749762_1159020294820507892_n_w99fgr.jpg",
             },
             {
               name: "Ather Ali",
@@ -685,7 +685,7 @@ export default function HomeClient({
             {
               name: "Shahmeer Ali",
               role: "24BSSW094",
-              img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+              img: "https://res.cloudinary.com/dnnh6pyhk/image/upload/v1778169635/IMG_5823_wqk8cqms_ltix0r.jpg",
             },
           ].map((member, i) => (
             <div key={i} className="team-card group relative">
@@ -724,7 +724,12 @@ export default function HomeClient({
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {complaints.slice(0, 3).map((c: any) => (
               <div key={c._id} className="transition-all hover:-translate-y-1">
-                <ComplaintCard complaint={c} variant={c.status === "Pending Verification" ? "pending" : "default"} />
+                <ComplaintCard
+                  complaint={c}
+                  variant={
+                    c.status === "Pending Verification" ? "pending" : "default"
+                  }
+                />
               </div>
             ))}
           </div>
