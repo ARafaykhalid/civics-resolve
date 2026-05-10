@@ -642,9 +642,9 @@ export default function HomeClient({
         <div className="grid grid-cols-2 lg:grid-cols-5 xl:grid-cols-5 gap-8">
           {[
             {
-              name: "Abdul Rafay Khalid",
-              role: "24BSSW038",
-              img: "https://res.cloudinary.com/dnnh6pyhk/image/upload/f_auto,q_80,w_640,c_limit/v1756875014/abdulrafay_v5ajkw.webp",
+              name: "Syed Naqi Haider Jafri",
+              role: "24BSSW074",
+              img: "https://res.cloudinary.com/dnnh6pyhk/image/upload/v1756875015/naqi_bxjrzw.webp",
             },
             {
               name: "Ahsan Chishti",
