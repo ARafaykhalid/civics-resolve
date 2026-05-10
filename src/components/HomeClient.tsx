@@ -656,12 +656,6 @@ export default function HomeClient({
               role: "24BSSW022",
               img: "https://res.cloudinary.com/dnnh6pyhk/image/upload/f_auto,q_80,w_640,c_limit/v1756875014/ayesha_byhx29.webp",
             },
-
-            {
-              name: "Syed Naqi Haider Jafri",
-              role: "24BSSW074",
-              img: "https://res.cloudinary.com/dnnh6pyhk/image/upload/v1756875015/naqi_bxjrzw.webp",
-            },
             {
               name: "Syed Haris Udin",
               role: "24BSSW070",
