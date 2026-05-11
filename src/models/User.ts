@@ -10,6 +10,8 @@ export interface IUserDoc extends Document {
   isVerified: boolean;
   verificationCode?: string;
   verificationCodeExpires?: Date;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,6 +31,8 @@ const UserSchema = new Schema<IUserDoc>(
     isVerified: { type: Boolean, default: false },
     verificationCode: { type: String },
     verificationCodeExpires: { type: Date },
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
   },
   { timestamps: true }
 );

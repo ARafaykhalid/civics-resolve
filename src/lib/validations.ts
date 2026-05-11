@@ -125,3 +125,30 @@ export const eventSchema = z.object({
 });
 
 export type EventInput = z.infer<typeof eventSchema>;
+
+/** Forgot Password schema */
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Please enter a valid email"),
+});
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+/** Reset Password schema */
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, "Token is required"),
+  password: z.string().min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Must contain uppercase letter")
+    .regex(/[0-9]/, "Must contain a number"),
+});
+
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
+/** Change Password schema */
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string().min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Must contain uppercase letter")
+    .regex(/[0-9]/, "Must contain a number"),
+});
+
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;

@@ -168,3 +168,27 @@ export async function sendVerificationEmail(email: string, code: string) {
     `,
   });
 }
+
+/** Send password reset email */
+export async function sendPasswordResetEmail(email: string, resetUrl: string) {
+  return sendEmail({
+    to: email,
+    subject: `Reset Your ${APP_NAME} Password`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0;">${APP_NAME}</h1>
+        </div>
+        <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 12px 12px;">
+          <h2 style="color: #1f2937;">Reset Your Password</h2>
+          <p style="color: #4b5563;">You requested a password reset. Click the button below to reset your password:</p>
+          <a href="${resetUrl}" 
+             style="display: inline-block; background: #667eea; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; margin-top: 16px;">
+            Reset Password
+          </a>
+          <p style="color: #6b7280; font-size: 14px; margin-top: 24px;">This link will expire in 1 hour. If you didn't request a password reset, you can safely ignore this email.</p>
+        </div>
+      </div>
+    `,
+  });
+}

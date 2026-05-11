@@ -42,7 +42,6 @@ const authorityLinks = [
     label: "Assigned Issues",
     icon: ClipboardCheck,
   },
-  { href: "/dashboard/volunteers", label: "Volunteers", icon: HandHelping },
   { href: "/dashboard/events", label: "Events", icon: CalendarDays },
   { href: "/dashboard/discussions", label: "Discussions", icon: MessageSquare },
 ];
