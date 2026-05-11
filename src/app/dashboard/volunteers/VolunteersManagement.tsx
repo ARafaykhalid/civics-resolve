@@ -32,7 +32,7 @@ const categories = [
   "Other",
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export default function VolunteersManagement({
   opportunities,
 }: {

@@ -624,6 +624,41 @@ export default function HomeClient({
         </div>
       </section>
 
+      {/* Mentor Section */}
+      <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8 reveal-section bg-slate-900/30 border-y border-white/5 mb-12">
+        <div className="grid lg:grid-cols-12 gap-12 items-center">
+          <div className="lg:col-span-4 lg:col-start-2 relative">
+            <div className="aspect-[4/5] overflow-hidden rounded-2xl bg-slate-800 shadow-2xl relative group">
+              <div className="absolute inset-0 bg-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10" />
+              <img
+                src="https://alquranresearchacademy.vercel.app/_next/image?url=%2FImages%2FSir.jpg&w=1920&q=75"
+                alt="Hafiz Muhammad Sufiyan Khilji"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 grayscale group-hover:grayscale-0"
+              />
+            </div>
+            {/* Decorative background element */}
+            <div className="absolute -z-10 -bottom-6 -left-6 w-full h-full rounded-2xl border-2 border-indigo-500/20" />
+          </div>
+          
+          <div className="lg:col-span-6">
+            <h2 className="text-indigo-400 font-semibold tracking-wide uppercase text-sm mb-2">
+              Project Supervisor
+            </h2>
+            <h3 className="text-3xl md:text-4xl font-bold text-white mb-6">
+              Hafiz Muhammad Sufiyan Khilji
+            </h3>
+            <div className="space-y-6 text-slate-400 text-lg">
+              <p>
+                This project was brought to life under the profound vision, dedicated mentorship, and unwavering support of our esteemed teacher.
+              </p>
+              <p>
+                His guidance has been the driving force behind CivicResolve, inspiring us to build a platform that truly empowers communities and fosters transparent civic action. We are deeply grateful for his leadership throughout this journey.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Team Section */}
       <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8 team-trigger reveal-section">
         <div className="text-center mb-16">
@@ -655,11 +690,6 @@ export default function HomeClient({
               name: "Ayesha Shaikh",
               role: "24BSSW022",
               img: "https://res.cloudinary.com/dnnh6pyhk/image/upload/f_auto,q_80,w_640,c_limit/v1756875014/ayesha_byhx29.webp",
-            },
-            {
-              name: "Syed Naqi Haider Jafri",
-              role: "24BSSW074",
-              img: "https://res.cloudinary.com/dnnh6pyhk/image/upload/v1756875015/naqi_bxjrzw.webp",
             },
             {
               name: "Syed Haris Udin",

@@ -15,7 +15,7 @@ export default async function DonateDetailPage({ params }: Props) {
   ]);
   if (!result.success || !result.data) notFound();
   const comments = commentsResult.success ? commentsResult.data || [] : [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   return (
     <DonateDetailClient
       campaign={result.data as any}

@@ -25,22 +25,34 @@ export default function Dropdown({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const selectedOption = options.find((opt) => opt.value === value);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node;
+
       if (
         dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
+        !dropdownRef.current.contains(target) &&
+        menuRef.current &&
+        !menuRef.current.contains(target)
       ) {
         setIsOpen(false);
       }
     }
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   return (
-    <div className={cn("relative", className)} ref={dropdownRef} id={id}>
+    <div
+      className={cn("relative z-[9999]", className)}
+      ref={dropdownRef}
+      id={id}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -58,7 +70,7 @@ export default function Dropdown({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto z-50 rounded-xl border border-white/10 bg-slate-900 py-1 shadow-xl shadow-black/50 animate-in fade-in zoom-in-95 focus:outline-none">
+        <div className="absolute mt-1 max-h-60 w-full overflow-y-auto z-50 rounded-xl border border-white/10 bg-slate-900 py-1 shadow-xl shadow-black/50 animate-in fade-in zoom-in-95 focus:outline-none">
           {options.map((option: { label: string; value: string }) => (
             <button
               key={option.value}

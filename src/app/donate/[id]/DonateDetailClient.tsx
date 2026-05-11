@@ -20,7 +20,7 @@ import {
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export default function DonateDetailClient({
   campaign,
   initialComments,
