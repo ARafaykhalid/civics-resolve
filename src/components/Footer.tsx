@@ -70,8 +70,17 @@ export default function Footer() {
         <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-white/5 pt-8 sm:flex-row">
           <p className="text-xs text-slate-600">© {new Date().getFullYear()} CivicResolve. All rights reserved.</p>
           <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1 text-xs text-slate-600">
-              Made with <Heart className="h-3 w-3 text-red-500" /> for communities
+            <span className="flex items-center gap-1 text-[11px] leading-none text-slate-600">
+              Made by{' '}
+              <a
+                href="https://abdulrafaykhalid.dev"
+                target="_blank"
+                rel="noreferrer"
+                className="font-medium text-slate-300 transition-colors hover:text-indigo-400"
+              >
+                Abdul Rafay
+              </a>{' '}
+              with <Heart className="h-3 w-3 text-red-500" />
             </span>
             <a href="#" className="text-slate-600 hover:text-slate-400 transition-colors"><Globe className="h-4 w-4" /></a>
             <a href="#" className="text-slate-600 hover:text-slate-400 transition-colors"><ExternalLink className="h-4 w-4" /></a>

@@ -1,0 +1,41 @@
+{
+  "project_name": "civics-project",
+  "display_name": "Civics Community Platform - Civic Engagement & Issue Reporting Portal",
+  "github_repository": "https://github.com/ARafaykhalid/civics-project",
+  "description": "Civics Community Platform is a civic engagement app built with Next.js 16, React 19, NextAuth v5, MongoDB, GSAP, Leaflet maps, and Cloudinary. It enables citizens to report local infrastructure issues, track resolution progress on interactive maps, vote on community proposals, and verify QR badges.",
+  "description_character_count": 299,
+  "full_description_paragraphs": [
+    "Civics Community Platform was built to solve the systemic disconnect between urban residents and local municipal authorities regarding public infrastructure maintenance (such as potholes, streetlights, and waste accumulation). Citizens needed a transparent tool to report hazards and track resolution progress.",
+    "Built with Next.js 16, React 19, NextAuth v5, and MongoDB Mongoose 9, the portal integrates an interactive Leaflet geospatial map where users can pin issue locations, upload photo evidence via Cloudinary, and monitor repair statuses. Citizens can upvote critical community reports and verify status changes via QR badges.",
+    "Managing high-resolution image uploads from mobile devices in low-bandwidth areas presented a major bottleneck. The team implemented client-side image compression alongside Next-Cloudinary transformations to ensure instant file uploads before saving geospatial metadata to MongoDB."
+  ],
+  "formatted_description_text": "Civics Community Platform was built to solve the systemic disconnect between urban residents and local municipal authorities regarding public infrastructure maintenance (such as potholes, streetlights, and waste accumulation). Citizens needed a transparent tool to report hazards and track resolution progress.\n\nBuilt with Next.js 16, React 19, NextAuth v5, and MongoDB Mongoose 9, the portal integrates an interactive Leaflet geospatial map where users can pin issue locations, upload photo evidence via Cloudinary, and monitor repair statuses. Citizens can upvote critical community reports and verify status changes via QR badges.\n\nManaging high-resolution image uploads from mobile devices in low-bandwidth areas presented a major bottleneck. The team implemented client-side image compression alongside Next-Cloudinary transformations to ensure instant file uploads before saving geospatial metadata to MongoDB.\n",
+  "topics": [
+    "nextjs",
+    "react19",
+    "typescript",
+    "tailwindcss",
+    "nextauth",
+    "mongodb",
+    "mongoose",
+    "gsap",
+    "leaflet",
+    "cloudinary",
+    "civic-tech",
+    "community-platform",
+    "modern-web"
+  ],
+  "tech_stack": {
+    "core_framework": "Next.js 16 (App Router)",
+    "ui_library": "React 19 & React DOM 19",
+    "language": "TypeScript 5",
+    "authentication": "NextAuth v5 (@auth/mongodb-adapter, bcryptjs)",
+    "database_and_odm": "MongoDB & Mongoose 9",
+    "interactive_mapping": "Leaflet & React Leaflet",
+    "animations": "GSAP 3 (@gsap/react)",
+    "cloud_media": "Cloudinary & Next Cloudinary",
+    "email_and_qr": "Resend API & QRCode (qrcode)",
+    "validation_and_dates": "Zod 4 & date-fns",
+    "styling_and_icons": "Tailwind CSS v4, Lucide React, clsx, tailwind-merge"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "project_name": "civics-project",
+  "display_name": "CivicResolve",
+  "github_repository": "https://github.com/ARafaykhalid/civics-project",
+  "description": "CivicResolve is an interactive civic engagement platform built with Next.js 16, React 19, Tailwind CSS v4, TypeScript, and Leaflet maps. It enables citizens to report local issues, track resolution timelines with authorities, join volunteer drives, and fund campaigns via zero-fee QR donations.",
+  "description_character_count": 284,
+  "topics": [
+    "nextjs",
+    "react19",
+    "typescript",
+    "tailwindcss",
+    "leaflet",
+    "geospatial",
+    "civic-tech",
+    "issue-tracker",
+    "mongodb",
+    "mongoose",
+    "nextauth",
+    "volunteering",
+    "community"
+  ],
+  "tech_stack": {
+    "framework": "Next.js 16 (App Router, Turbopack)",
+    "ui_library": "React 19",
+    "language": "TypeScript",
+    "styling": "Tailwind CSS v4",
+    "geospatial_maps": "Leaflet & React-Leaflet",
+    "authentication": "Auth.js / NextAuth v5 Beta",
+    "database": "MongoDB & Mongoose v9",
+    "media_storage": "Cloudinary",
+    "email_service": "Resend API",
+    "validation": "Zod v4",
+    "animations": "GSAP 3",
+    "icons": "Lucide React"
+  },
+  "screenshots": {
+    "desktop": "screenshots/desktop.png",
+    "mobile": "screenshots/mobile.png",
+    "unique_sections": [
+      "screenshots/hero-portal.png",
+      "screenshots/complaints-board.png",
+      "screenshots/issue-submission.png",
+      "screenshots/donation-drives.png",
+      "screenshots/volunteer-hub.png"
+    ]
+  }
+}

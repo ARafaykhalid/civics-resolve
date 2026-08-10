@@ -1,0 +1,5 @@
+Civics Community Platform was built to solve the systemic disconnect between urban residents and local municipal authorities regarding public infrastructure maintenance (such as potholes, streetlights, and waste accumulation). Citizens needed a transparent tool to report hazards and track resolution progress.
+
+Built with Next.js 16, React 19, NextAuth v5, and MongoDB Mongoose 9, the portal integrates an interactive Leaflet geospatial map where users can pin issue locations, upload photo evidence via Cloudinary, and monitor repair statuses. Citizens can upvote critical community reports and verify status changes via QR badges.
+
+Managing high-resolution image uploads from mobile devices in low-bandwidth areas presented a major bottleneck. The team implemented client-side image compression alongside Next-Cloudinary transformations to ensure instant file uploads before saving geospatial metadata to MongoDB.
